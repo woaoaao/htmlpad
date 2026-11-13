@@ -5,16 +5,12 @@ sdk ok
 Ubuntu clang version 21.1.8 (6ubuntu1)
 Target: x86_64-pc-linux-gnu
 === 编译 main.m ===
-cc exit=0
-=== 链接 ===
-ld64.lld: error: undefined symbol: CGRectZero
->>> referenced by /home/runner/work/htmlpad/htmlpad/build/main.o:(symbol -[PreviewViewController viewDidLoad]+0x258)
->>> referenced by /home/runner/work/htmlpad/htmlpad/build/main.o:(symbol -[PreviewViewController viewDidLoad]+0x254)
->>> referenced by /home/runner/work/htmlpad/htmlpad/build/main.o:(symbol -[EditorViewController viewDidLoad]+0x1dc)
->>> referenced 1 more times
-
-ld64.lld: error: undefined symbol: OBJC_CLASS_$_ScriptProxy
->>> referenced by /home/runner/work/htmlpad/htmlpad/build/main.o:(symbol OBJC_CLASSLIST_REFERENCES_$_.101+0x0)
-clang: error: linker command failed with exit code 1 (use -v to see invocation)
-link exit=1
-!!! 链接失败，见上方错误
+/home/runner/work/htmlpad/htmlpad/objc/main.m:64:6: error: receiver type 'EditorViewController' for instance message is a forward declaration
+   64 |     [self.target userContentController:userContentController didReceiveScriptMessage:message];
+      |      ^~~~~~~~~~~
+/home/runner/work/htmlpad/htmlpad/objc/main.m:54:8: note: forward declaration of class here
+   54 | @class EditorViewController;
+      |        ^
+1 error generated.
+cc exit=1
+!!! 编译失败，见上方错误
