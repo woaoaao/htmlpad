@@ -61,7 +61,8 @@ static NSString *DecodeText(NSData *data) {
 
 - (void)userContentController:(WKUserContentController *)userContentController
       didReceiveScriptMessage:(WKScriptMessage *)message {
-    [self.target userContentController:userContentController didReceiveScriptMessage:message];
+    id<WKScriptMessageHandler> handler = (id<WKScriptMessageHandler>)self.target;
+    [handler userContentController:userContentController didReceiveScriptMessage:message];
 }
 
 @end
