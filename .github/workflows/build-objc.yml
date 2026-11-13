@@ -1,0 +1,67 @@
+name: Build ipa (ubuntu cross-compile)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "objc/**"
+      - ".github/workflows/build-objc.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 clang / lld / git-lfs
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang lld git-lfs file zip > /dev/null
+          clang --version | head -1
+
+      - name: 缓存 iOS SDK
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: sdk/iPhoneOS14.5.sdk
+          key: iphoneos145-sdk-v1
+
+      - name: 下载 iPhoneOS 14.5 SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git lfs install --skip-repo
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git sdk-full
+          cd sdk-full
+          git sparse-checkout set iPhoneOS14.5.sdk
+          cd ..
+          mkdir -p sdk
+          mv sdk-full/iPhoneOS14.5.sdk sdk/iPhoneOS14.5.sdk
+          du -sh sdk/iPhoneOS14.5.sdk
+
+      - name: 编译并打包
+        run: bash objc/build.sh
+
+      - name: 上传 ipa
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HTMLPad-objc-ipa
+          path: HTMLPad-unsigned.ipa
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: 把结果写回仓库
+        if: always()
+        run: |
+          git config user.name builder
+          git config user.email builder@example.com
+          git add -f build.log || true
+          if [ -f HTMLPad-unsigned.ipa ]; then git add -f HTMLPad-unsigned.ipa; fi
+          git commit -m "build result $(date -u +%FT%TZ)" || true
+          git push || true
