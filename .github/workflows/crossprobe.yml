@@ -1,0 +1,63 @@
+name: crossprobe
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: probe toolchain
+        run: |
+          set +e
+          exec > >(tee -a probe.log) 2>&1
+          echo "=== apt ==="
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang lld git-lfs file
+          echo "clang: $(clang --version | head -1)"
+          ls -la /usr/bin/ld64.lld /usr/bin/ld.lld /usr/bin/lld 2>&1 | head -5
+
+          echo "=== sdk ==="
+          git lfs install --skip-repo
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git sdk
+          echo "clone exit=$?"
+          cd sdk
+          git sparse-checkout set iPhoneOS14.5.sdk
+          echo "sparse exit=$?"
+          du -sh iPhoneOS14.5.sdk
+          ls iPhoneOS14.5.sdk | head -8
+          ls iPhoneOS14.5.sdk/System/Library/Frameworks | head -5
+          cd ..
+
+          echo "=== compile objc ==="
+          printf '#import <Foundation/Foundation.h>\n#import <UIKit/UIKit.h>\nint main(int argc, char **argv) { return 0; }\n' > hello.m
+          clang -target arm64-apple-ios14.5 -isysroot "$PWD/sdk/iPhoneOS14.5.sdk" -fobjc-arc -c hello.m -o hello.o
+          echo "cc exit=$?"
+
+          echo "=== link mach-o ==="
+          clang -target arm64-apple-ios14.5 -isysroot "$PWD/sdk/iPhoneOS14.5.sdk" -fuse-ld=lld hello.o -framework Foundation -framework UIKit -o hello.bin
+          echo "link exit=$?"
+          file hello.bin 2>&1 || true
+          ls -la hello.bin 2>&1 || true
+
+          echo "=== try ld64.lld directly ==="
+          ld64.lld -arch arm64 -platform_version ios 14.5 14.5 -syslibroot "$PWD/sdk/iPhoneOS14.5.sdk" -o hello2.bin hello.o -framework Foundation -framework UIKit 2>&1 | tail -20
+          echo "ld64 exit=$?"
+          file hello2.bin 2>&1 || true
+
+          echo "=== done ==="
+
+      - name: publish log
+        if: always()
+        run: |
+          git config user.name probe
+          git config user.email probe@example.com
+          git add -f probe.log
+          git commit -m "probe result" || true
+          git push || true
