@@ -39,6 +39,7 @@ echo "=== 链接 ==="
 clang -target arm64-apple-ios14.5 -isysroot "$SDK" -fuse-ld=lld \
       "$ROOT/build/main.o" \
       -framework UIKit -framework Foundation -framework WebKit -framework UniformTypeIdentifiers \
+      -framework CoreGraphics -framework QuartzCore \
       -o "$APP/HTMLPad"
 LINK_STATUS=$?
 echo "link exit=$LINK_STATUS"

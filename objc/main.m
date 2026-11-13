@@ -57,6 +57,15 @@ static NSString *DecodeText(NSData *data) {
 @property (nonatomic, weak) EditorViewController *target;
 @end
 
+@implementation ScriptProxy
+
+- (void)userContentController:(WKUserContentController *)userContentController
+      didReceiveScriptMessage:(WKScriptMessage *)message {
+    [self.target userContentController:userContentController didReceiveScriptMessage:message];
+}
+
+@end
+
 #pragma mark - 预览页
 
 @interface PreviewViewController : UIViewController
