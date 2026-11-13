@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="color-scheme" content="light dark">
+<title>HTML 编辑器</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --caret: #0969da;
+    --tag: #cf222e;
+    --attr: #0550ae;
+    --str: #0a3069;
+    --cmt: #6e7781;
+    --doct: #8250df;
+    --punct: #57606a;
+    --sel: rgba(9, 105, 218, 0.30);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181d;
+      --fg: #e6edf3;
+      --caret: #58a6ff;
+      --tag: #ff7b72;
+      --attr: #79c0ff;
+      --str: #a5d6ff;
+      --cmt: #8b949e;
+      --doct: #d2a8ff;
+      --punct: #8b949e;
+      --sel: rgba(88, 166, 255, 0.35);
+    }
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg);
+  }
+
+  #hl, #ta {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    border: 0;
+    box-sizing: border-box;
+    padding: 12px 14px 40px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+    font-size: 15px;
+    line-height: 1.55;
+    letter-spacing: 0;
+    word-spacing: 0;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    -webkit-hyphens: none;
+    tab-size: 2;
+  }
+
+  #hl {
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--fg);
+  }
+
+  #ta {
+    overflow: auto;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: var(--caret);
+    resize: none;
+    outline: none;
+    border-radius: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  #ta::selection { background: var(--sel); }
+  #ta::-webkit-scrollbar { display: none; }
+
+  .tg { color: var(--tag); }
+  .at { color: var(--attr); }
+  .st { color: var(--str); }
+  .cm { color: var(--cmt); font-style: italic; }
+  .dt { color: var(--doct); }
+  .pn { color: var(--punct); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <pre id="hl" aria-hidden="true"></pre>
+  <textarea id="ta"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            wrap="soft"
+            placeholder="在这里输入 HTML…"></textarea>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ta = document.getElementById("ta");
+  var hl = document.getElementById("hl");
+  var MAX_HIGHLIGHT = 400000;   // 超过这个长度就不做高亮了，只保证能编辑
+  var dirtyTimer = null;
+
+  function post(payload) {
+    try {
+      window.webkit.messageHandlers.bridge.postMessage(payload);
+    } catch (err) {
+      /* 在普通浏览器里预览时没有原生桥，忽略即可 */
+    }
+  }
+
+  function esc(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  var TOKEN = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<\/?[a-zA-Z][^>]*>/gi;
+
+  function paintTag(token) {
+    var m = /^(<\/?)([a-zA-Z][^\s\/>]*)([\s\S]*?)(\/?>)$/.exec(token);
+    if (!m) { return esc(token); }
+
+    var out = '<span class="pn">' + esc(m[1]) + '</span>' +
+              '<span class="tg">' + esc(m[2]) + '</span>';
+
+    out += m[3].replace(
+      /([a-zA-Z_:@][-\w:.]*)(\s*=\s*)("[^"]*"|'[^']*'|[^\s"'>]+)?/g,
+      function (all, name, eq, value) {
+        var piece = '<span class="at">' + esc(name) + '</span>' +
+                    '<span class="pn">' + esc(eq) + '</span>';
+        if (value) {
+          piece += '<span class="st">' + esc(value) + '</span>';
+        }
+        return piece;
+      }
+    );
+
+    out += '<span class="pn">' + esc(m[4]) + '</span>';
+    return out;
+  }
+
+  function render() {
+    var text = ta.value;
+
+    if (text.length > MAX_HIGHLIGHT) {
+      hl.textContent = "";
+      return;
+    }
+
+    var out = "";
+    var last = 0;
+    var match;
+    TOKEN.lastIndex = 0;
+
+    while ((match = TOKEN.exec(text)) !== null) {
+      if (match.index > last) {
+        out += esc(text.slice(last, match.index));
+      }
+      var token = match[0];
+      if (token.slice(0, 4) === "<!--") {
+        out += '<span class="cm">' + esc(token) + '</span>';
+      } else if (/^<!DOCTYPE/i.test(token)) {
+        out += '<span class="dt">' + esc(token) + '</span>';
+      } else {
+        out += paintTag(token);
+      }
+      last = match.index + token.length;
+      if (TOKEN.lastIndex === match.index) { TOKEN.lastIndex++; }
+    }
+
+    out += esc(text.slice(last));
+    hl.innerHTML = out + "\n";
+  }
+
+  var renderQueued = false;
+  function scheduleRender() {
+    if (renderQueued) { return; }
+    renderQueued = true;
+    window.requestAnimationFrame(function () {
+      renderQueued = false;
+      render();
+      syncScroll();
+    });
+  }
+
+  function syncScroll() {
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
+  }
+
+  function notifyChange() {
+    if (dirtyTimer) { clearTimeout(dirtyTimer); }
+    dirtyTimer = setTimeout(function () {
+      post({ type: "change", length: ta.value.length });
+    }, 150);
+  }
+
+  function insertText(text) {
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var value = ta.value;
+    ta.value = value.slice(0, start) + text + value.slice(end);
+    var caret = start + text.length;
+    ta.setSelectionRange(caret, caret);
+    scheduleRender();
+    notifyChange();
+    ta.focus();
+  }
+
+  function wrapSelection(before, after) {
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var value = ta.value;
+    var selected = value.slice(start, end);
+    ta.value = value.slice(0, start) + before + selected + after + value.slice(end);
+    var selStart = start + before.length;
+    var selEnd = selStart + selected.length;
+    ta.setSelectionRange(selStart, selEnd);
+    scheduleRender();
+    notifyChange();
+    ta.focus();
+  }
+
+  ta.addEventListener("input", function () {
+    scheduleRender();
+    notifyChange();
+  }, false);
+
+  ta.addEventListener("scroll", syncScroll, false);
+
+  ta.addEventListener("keydown", function (event) {
+    if ((event.metaKey || event.ctrlKey) && (event.key === "s" || event.key === "S")) {
+      event.preventDefault();
+      post({ type: "save" });
+      return;
+    }
+    if (event.key === "Tab") {
+      event.preventDefault();
+      insertText("  ");
+    }
+  }, false);
+
+  window.editor = {
+    setText: function (text) {
+      ta.value = (typeof text === "string") ? text : "";
+      ta.setSelectionRange(0, 0);
+      ta.scrollTop = 0;
+      render();
+      syncScroll();
+    },
+    getText: function () {
+      return ta.value;
+    },
+    insert: insertText,
+    wrap: wrapSelection,
+    focus: function () { ta.focus(); },
+    blur: function () { ta.blur(); },
+    length: function () { return ta.value.length; }
+  };
+
+  render();
+  post({ type: "ready", length: ta.value.length });
+})();
+</script>
+</body>
+</html>

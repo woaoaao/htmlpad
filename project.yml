@@ -1,0 +1,45 @@
+name: HTMLPad
+
+options:
+  bundleIdPrefix: com.htmlpad
+  createIntermediateGroups: true
+  groupSortPosition: top
+  deploymentTarget:
+    iOS: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    ENABLE_BITCODE: NO
+    CLANG_ENABLE_MODULES: YES
+    ALWAYS_SEARCH_USER_PATHS: NO
+    GCC_C_LANGUAGE_STANDARD: gnu17
+
+targets:
+  HTMLPad:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: HTMLPad
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: HTMLPad
+        PRODUCT_BUNDLE_IDENTIFIER: com.htmlpad.app
+        INFOPLIST_FILE: HTMLPad/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SWIFT_EMIT_LOC_STRINGS: NO
+    scheme:
+      gatherCoverageData: false

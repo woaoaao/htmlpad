@@ -1,0 +1,18 @@
+# XcodeGen 生成物
+*.xcodeproj/
+*.xcworkspace/
+
+# 构建产物
+build/
+DerivedData/
+out/
+*.ipa
+*.xcarchive
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 签名相关，千万不要提交
+*.p12
+*.mobileprovision
