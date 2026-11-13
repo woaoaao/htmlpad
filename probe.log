@@ -1,0 +1,56 @@
+=== apt ===
+Selecting previously unselected package clang.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 213197 files and directories currently installed.)
+Preparing to unpack .../clang_1%3a21.1.6-71_amd64v3.deb ...
+Unpacking clang (1:21.1.6-71) ...
+Selecting previously unselected package lld:amd64.
+Preparing to unpack .../lld_1%3a21.1.6-71_amd64v3.deb ...
+Unpacking lld:amd64 (1:21.1.6-71) ...
+Setting up lld:amd64 (1:21.1.6-71) ...
+Setting up clang (1:21.1.6-71) ...
+Processing triggers for man-db (2.13.1-1build1) ...
+Not building database; man-db/auto-update is not 'true'.
+
+Running kernel seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ systemctl restart hosted-compute-agent.service
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+lrwxrwxrwx 1 root root  9 Mar 19  2026 /usr/bin/ld.lld -> ld.lld-21
+lrwxrwxrwx 1 root root 11 Mar 19  2026 /usr/bin/ld64.lld -> ld64.lld-21
+lrwxrwxrwx 1 root root  6 Mar 19  2026 /usr/bin/lld -> lld-21
+=== sdk ===
+Git LFS initialized.
+Cloning into 'sdk'...
+clone exit=0
+sparse exit=0
+189M	iPhoneOS14.5.sdk
+Developer
+Entitlements.plist
+SDKSettings.json
+SDKSettings.plist
+System
+usr
+ARKit.framework
+AVFAudio.framework
+AVFoundation.framework
+AVKit.framework
+Accelerate.framework
+=== compile objc ===
+cc exit=0
+=== link mach-o ===
+link exit=0
+hello.bin: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
+-rwxr-xr-x 1 runner runner 49360 Nov 13 15:52 hello.bin
+=== try ld64.lld directly ===
+ld64 exit=0
+hello2.bin: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
+=== done ===
