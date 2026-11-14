@@ -1352,6 +1352,10 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 @property (nonatomic, assign) NSInteger currentMatch;
 @property (nonatomic, assign) BOOL dirty;
 
+@property (nonatomic, assign) NSStringEncoding originalEncoding;
+@property (nonatomic, assign) BOOL hadBOM;
+@property (nonatomic, assign) BOOL usesCRLF;
+
 @property (nonatomic, strong) NSMutableArray<NSString *> *undoStack;
 @property (nonatomic, strong) NSMutableArray<NSString *> *redoStack;
 @property (nonatomic, copy) NSString *lastText;
@@ -1413,14 +1417,87 @@ static const NSInteger kUndoLimit = 30;
     self.textView.delegate = self;
     self.textView.editable = YES;
     self.textView.font = [self codeFont];
+
+    // ① 关掉一切“智能”替换，否则改 HTML 会被系统偷偷改字
     self.textView.autocorrectionType = UITextAutocorrectionTypeNo;
     self.textView.autocapitalizationType = UITextAutocapitalizationTypeNone;
     self.textView.spellCheckingType = UITextSpellCheckingTypeNo;
-    self.textView.text = ReadTextFile(self.file[@"path"]);
+    self.textView.smartQuotesType = UITextSmartQuotesTypeNo;        // " 不再变 “ ”
+    self.textView.smartDashesType = UITextSmartDashesTypeNo;        // -- 不再变 —
+    self.textView.smartInsertDeleteType = UITextSmartInsertDeleteTypeNo;  // 不偷偷增减空格
+    if (@available(iOS 11.0, *)) {
+        self.textView.smartInsertDeleteType = UITextSmartInsertDeleteTypeNo;
+    }
+
+    [self loadFileContent];
+
     self.textView.typingAttributes = [self plainAttributes];
     self.textView.textContainerInset = UIEdgeInsetsMake(10, 10, 28, 10);
     self.textView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.textView];
+}
+
+/// 按原文件编码读取，并记住编码 / BOM / 换行方式，保存时原样写回
+- (void)loadFileContent {
+    NSData *data = [NSData dataWithContentsOfFile:self.file[@"path"]];
+    if (data.length == 0) {
+        self.textView.text = @"";
+        self.originalEncoding = NSUTF8StringEncoding;
+        self.hadBOM = NO;
+        self.usesCRLF = NO;
+        return;
+    }
+
+    const unsigned char *bytes = (const unsigned char *)data.bytes;
+    NSUInteger offset = 0;
+    BOOL hasBOM = NO;
+    NSStringEncoding encoding = NSUTF8StringEncoding;
+
+    if (data.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
+        hasBOM = YES; offset = 3; encoding = NSUTF8StringEncoding;
+    } else if (data.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+        hasBOM = YES; offset = 2; encoding = NSUTF16LittleEndianStringEncoding;
+    } else if (data.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
+        hasBOM = YES; offset = 2; encoding = NSUTF16BigEndianStringEncoding;
+    }
+
+    NSData *payload = offset > 0 ? [data subdataWithRange:NSMakeRange(offset, data.length - offset)] : data;
+    NSString *text = [[NSString alloc] initWithData:payload encoding:encoding];
+
+    if (!text) {
+        // 中文老网页常见：GBK / GB18030
+        encoding = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_18030_2000);
+        text = [[NSString alloc] initWithData:data encoding:encoding];
+        hasBOM = NO;
+    }
+    if (!text) {
+        encoding = NSISOLatin1StringEncoding;
+        text = [[NSString alloc] initWithData:data encoding:encoding];
+        hasBOM = NO;
+    }
+
+    self.originalEncoding = text ? encoding : NSUTF8StringEncoding;
+    self.hadBOM = hasBOM;
+    self.usesCRLF = ([text rangeOfString:@"\r\n"].location != NSNotFound);
+
+    // 编辑时统一用 \n，保存时再还原
+    if (self.usesCRLF) {
+        text = [text stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"];
+    }
+
+    self.textView.text = text ?: @"";
+    LogEvent(@"打开源码：编码=%@ 换行=%@ 大小=%lu",
+             [self encodingName:self.originalEncoding],
+             self.usesCRLF ? @"CRLF" : @"LF",
+             (unsigned long)data.length);
+}
+
+- (NSString *)encodingName:(NSStringEncoding)encoding {
+    if (encoding == NSUTF8StringEncoding) { return @"UTF-8"; }
+    if (encoding == NSUTF16LittleEndianStringEncoding) { return @"UTF-16LE"; }
+    if (encoding == NSUTF16BigEndianStringEncoding) { return @"UTF-16BE"; }
+    if (encoding == NSISOLatin1StringEncoding) { return @"Latin-1"; }
+    return @"GB18030/GBK";
 }
 
 - (void)buildFindBar {
@@ -1704,17 +1781,49 @@ static const NSInteger kUndoLimit = 30;
     NSString *path = self.file[@"path"];
     if (path.length == 0) { return; }
 
+    NSString *text = self.textView.text ?: @"";
+
+    // 还原原来的换行方式
+    if (self.usesCRLF) {
+        text = [text stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"];
+        text = [text stringByReplacingOccurrencesOfString:@"\n" withString:@"\r\n"];
+    }
+
+    // 用原编码保存，编码不了的新字符才退回 UTF-8
+    NSData *payload = [text dataUsingEncoding:self.originalEncoding allowLossyConversion:NO];
+    BOOL switchedEncoding = NO;
+    if (!payload) {
+        payload = [text dataUsingEncoding:NSUTF8StringEncoding];
+        switchedEncoding = YES;
+        LogEvent(@"原编码(%@)无法表示新内容，已改用 UTF-8 保存", [self encodingName:self.originalEncoding]);
+    }
+
+    NSMutableData *output = [NSMutableData data];
+    if (self.hadBOM && !switchedEncoding) {
+        if (self.originalEncoding == NSUTF8StringEncoding) {
+            const unsigned char bom[] = {0xEF, 0xBB, 0xBF};
+            [output appendBytes:bom length:3];
+        } else if (self.originalEncoding == NSUTF16LittleEndianStringEncoding) {
+            const unsigned char bom[] = {0xFF, 0xFE};
+            [output appendBytes:bom length:2];
+        } else if (self.originalEncoding == NSUTF16BigEndianStringEncoding) {
+            const unsigned char bom[] = {0xFE, 0xFF};
+            [output appendBytes:bom length:2];
+        }
+    }
+    [output appendData:payload];
+
     NSError *error = nil;
-    BOOL ok = [self.textView.text writeToFile:path
-                                   atomically:YES
-                                     encoding:NSUTF8StringEncoding
-                                        error:&error];
+    BOOL ok = [output writeToFile:path options:NSDataWritingAtomic error:&error];
     if (ok) {
         self.dirty = NO;
         self.saveItem.enabled = NO;
         self.title = @"源代码";
-        LogEvent(@"源码已保存：%@（%lu 字符）",
-                 path.lastPathComponent, (unsigned long)self.textView.text.length);
+        LogEvent(@"源码已保存：%@（%lu 字符，编码=%@，换行=%@）",
+                 path.lastPathComponent,
+                 (unsigned long)self.textView.text.length,
+                 [self encodingName:(switchedEncoding ? NSUTF8StringEncoding : self.originalEncoding)],
+                 self.usesCRLF ? @"CRLF" : @"LF");
         [[NSNotificationCenter defaultCenter] postNotificationName:@"HTMLPadFilesChanged" object:nil];
         [self showToast:@"已保存"];
     } else {
