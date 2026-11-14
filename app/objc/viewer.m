@@ -434,7 +434,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 #pragma mark - 主页（我的 HTML）
 
 @interface FilesController : UIViewController <UITableViewDataSource, UITableViewDelegate,
-                                               UISearchResultsUpdating, UIDocumentPickerDelegate>
+                                               UISearchResultsUpdating>
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) UISearchController *searchController;
@@ -470,7 +470,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     self.emptyLabel.textAlignment = NSTextAlignmentCenter;
     self.emptyLabel.font = [UIFont systemFontOfSize:14];
     self.emptyLabel.textColor = [UIColor secondaryLabelColor];
-    self.emptyLabel.text = @"还没有 HTML 文件\n可以点下面的按钮导入，\n也可以把 html 丢进「文件」App → 我的 iPhone → HTML 再下拉刷新";
+    self.emptyLabel.text = @"还没有 HTML 文件\n把 .html 放进「文件」App → 我的 iPhone → HTML\n再回到这里下拉刷新即可";
     self.emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.emptyLabel];
     [NSLayoutConstraint activateConstraints:@[
@@ -483,7 +483,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     [self buildAddMenu];
 
     self.emptyButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.emptyButton setTitle:@"导入 HTML 文件" forState:UIControlStateNormal];
+    [self.emptyButton setTitle:@"粘贴 / 从剪贴板新建" forState:UIControlStateNormal];
     self.emptyButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
     [self.emptyButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     self.emptyButton.backgroundColor = [UIColor systemBlueColor];
@@ -571,20 +571,10 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
                                                                   message:nil
                                                            preferredStyle:UIAlertControllerStyleActionSheet];
     __weak typeof(self) weakSelf = self;
-    [sheet addAction:[UIAlertAction actionWithTitle:@"打开 HTML 文件"
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(UIAlertAction *action) {
-        [weakSelf pickFile];
-    }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"粘贴代码"
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *action) {
         [weakSelf presentPaste];
-    }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:@"打开文件夹"
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(UIAlertAction *action) {
-        [weakSelf pickFolder];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"从剪贴板新建文件"
                                               style:UIAlertActionStyleDefault
@@ -751,67 +741,6 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:preview];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
     PresentSafely(self, nav, @"预览页");
-}
-
-- (void)pickFile {
-    LogEvent(@"pickFile 开始");
-    NSMutableArray<UTType *> *types = [NSMutableArray array];
-    UTType *html = [UTType typeWithIdentifier:@"public.html"];
-    if (html) { [types addObject:html]; }
-    UTType *text = [UTType typeWithIdentifier:@"public.plain-text"];
-    if (text) { [types addObject:text]; }
-    if (types.count == 0) { return; }
-
-    UIDocumentPickerViewController *picker =
-        [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:NO];
-    picker.delegate = self;
-    picker.allowsMultipleSelection = NO;
-    picker.modalPresentationStyle = UIModalPresentationFormSheet;
-    PresentSafely(self, picker, @"文件选择器");
-}
-
-- (void)pickFolder {
-    LogEvent(@"pickFolder 开始");
-    UTType *folderType = [UTType typeWithIdentifier:@"public.folder"];
-    UIDocumentPickerViewController *picker =
-        [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:(folderType ? @[folderType] : @[])
-                                                                    asCopy:NO];
-    picker.delegate = self;
-    picker.allowsMultipleSelection = NO;
-    picker.modalPresentationStyle = UIModalPresentationFormSheet;
-    PresentSafely(self, picker, @"文件夹选择器");
-}
-
-- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
-    LogEvent(@"新回调 didPickDocumentsAtURLs 触发，%lu 个", (unsigned long)urls.count);
-    [self handlePickedURLs:urls];
-}
-
-- (void)handlePickedURLs:(NSArray<NSURL *> *)urls {
-    LogEvent(@"开始处理 %lu 个文件", (unsigned long)urls.count);
-    BOOL anyFailure = NO;
-    for (NSURL *url in urls) {
-        if (![[VStore shared] importFromURL:url]) { anyFailure = YES; }
-    }
-    [self.tableView reloadData];
-    [self refreshEmptyState];
-    if (anyFailure) {
-        UIAlertController *alert =
-            [UIAlertController alertControllerWithTitle:@"导入失败"
-                                                message:@"这个文件没法拷贝进 App。可以先在「文件」App 里把它拷贝到「我的 iPhone」，再导入一次。"
-                                         preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
-        PresentSafely(self, alert, @"导入失败提示");
-    }
-}
-
-- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentAtURL:(NSURL *)url {
-    LogEvent(@"老回调 didPickDocumentAtURL 触发");
-    [self handlePickedURLs:(url ? @[url] : @[])];
-}
-
-- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
-    LogEvent(@"选择器被取消");
 }
 
 - (void)presentPaste {
