@@ -726,6 +726,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:NO];
     picker.delegate = self;
     picker.allowsMultipleSelection = NO;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
     PresentSafely(self, picker, @"文件选择器");
 }
 
@@ -737,11 +738,17 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
                                                                     asCopy:NO];
     picker.delegate = self;
     picker.allowsMultipleSelection = NO;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
     PresentSafely(self, picker, @"文件夹选择器");
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
-    LogEvent(@"选中了 %lu 个文件", (unsigned long)urls.count);
+    LogEvent(@"新回调 didPickDocumentsAtURLs 触发，%lu 个", (unsigned long)urls.count);
+    [self handlePickedURLs:urls];
+}
+
+- (void)handlePickedURLs:(NSArray<NSURL *> *)urls {
+    LogEvent(@"开始处理 %lu 个文件", (unsigned long)urls.count);
     BOOL anyFailure = NO;
     for (NSURL *url in urls) {
         if (![[VStore shared] importFromURL:url]) { anyFailure = YES; }
@@ -756,6 +763,11 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         [alert addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
         PresentSafely(self, alert, @"导入失败提示");
     }
+}
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentAtURL:(NSURL *)url {
+    LogEvent(@"老回调 didPickDocumentAtURL 触发");
+    [self handlePickedURLs:(url ? @[url] : @[])];
 }
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
