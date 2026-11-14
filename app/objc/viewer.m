@@ -997,7 +997,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         [self.webView.topAnchor constraintEqualToAnchor:safe.topAnchor],
         [self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.webView.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
+        [self.webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
     ]];
 
     [self buildToolbar];
@@ -1040,6 +1040,16 @@ static NSString *const kViewportJS =
             [weakSelf.webView reload];
         });
     }];
+}
+
+#pragma mark 全屏适配
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    // 网页铺满整屏（含 Home 指示条区域），内容用内边距避让，底部就不再露白
+    CGFloat bottomInset = self.view.safeAreaInsets.bottom;
+    self.webView.scrollView.contentInset = UIEdgeInsetsMake(0, 0, bottomInset, 0);
+    self.webView.scrollView.scrollIndicatorInsets = UIEdgeInsetsMake(0, 0, bottomInset, 0);
 }
 
 #pragma mark 工具栏 / 菜单
