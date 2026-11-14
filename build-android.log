@@ -46,11 +46,11 @@ exit=0
 keytool exit=0
 apksigner exit=0
 === 检查 ===
--rw-r--r-- 1 runner runner 58249 Nov 14 05:08 /home/runner/work/htmlpad/htmlpad/AiDou.apk
+-rw-r--r-- 1 runner runner 58249 Nov 14 05:09 /home/runner/work/htmlpad/htmlpad/AiDou.apk
 V3.0 Signer: certificate DN: CN=AiDou, OU=AiDou, O=AiDou, L=CN, ST=CN, C=CN
-V3.0 Signer: certificate SHA-256 digest: 452d81d896c99c635ce299e6352146f5db46808bfdf5892822130f89a78a9ac0
-V3.0 Signer: certificate SHA-1 digest: c37095ec3feeffeda86a44914c9676d897db1a89
-V3.0 Signer: certificate MD5 digest: 705655565ef2fad027ec2143b3376eea
+V3.0 Signer: certificate SHA-256 digest: 96546d0af33d9021a1735173e3932448dc3f47fb36f629f81b27ec3869bd3fe1
+V3.0 Signer: certificate SHA-1 digest: 403b5701f4f7717889cd57a4df1377b088c3707d
+V3.0 Signer: certificate MD5 digest: f011cb342637d861a9204ac92c7454ef
 apk bytes: 58249 entries: 12
 has classes.dex: True
 has AndroidManifest: True
