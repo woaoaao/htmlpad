@@ -1,15 +1,10 @@
 package com.woaoaao.html;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -17,17 +12,19 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 
-/** 预览页：WebView + 收藏 / 编辑源码 / 重载 / 网络 / 外部链接 / 分享 */
+/** 预览页：WebView 铺满 + 收藏 / 编辑源码 / 重载 / 网络 / 分享 */
 public class ViewerActivity extends Activity {
 
     private WebView webView;
     private File file;
     private boolean allowNetwork;
+    private Ui.Shell shell;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,19 +38,78 @@ public class ViewerActivity extends Activity {
         file = new File(path);
         allowNetwork = Store.allowNetwork(this);
 
-        FrameLayout root = new FrameLayout(this);
-        webView = new WebView(this);
-        root.addView(webView, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        setContentView(root);
+        shell = Ui.build(this, file.getName(),
+                new Ui.MenuProvider() {
+                    @Override
+                    public String[] items() {
+                        boolean favorite = Store.isFavorite(ViewerActivity.this,
+                                Store.relative(Store.root(ViewerActivity.this), file));
+                        return new String[]{
+                                favorite ? "取消收藏" : "添加到收藏",
+                                "编辑源代码",
+                                "重新加载",
+                                allowNetwork ? "网络访问：允许" : "网络访问：禁止",
+                                "分享文件"
+                        };
+                    }
+                },
+                new Ui.MenuHandler() {
+                    @Override
+                    public void onSelected(int index) {
+                        handleMenu(index);
+                    }
+                });
 
-        if (getActionBar() != null) {
-            getActionBar().setTitle(file.getName());
-            getActionBar().setSubtitle(null);
-        }
+        // 网页铺满到屏幕底部（底部安全区交给注入的 CSS 处理）
+        shell.content.setPadding(0, 0, 0, 0);
+
+        FrameLayout box = new FrameLayout(this);
+        shell.content.addView(box, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        webView = new WebView(this);
+        box.addView(webView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         configureWebView();
         load();
+    }
+
+    private void handleMenu(int index) {
+        switch (index) {
+            case 0:
+                Store.toggleFavorite(this, Store.relative(Store.root(this), file));
+                Toast.makeText(this, "已更新收藏", Toast.LENGTH_SHORT).show();
+                break;
+            case 1: {
+                Intent intent = new Intent(this, EditorActivity.class);
+                intent.putExtra("path", file.getAbsolutePath());
+                startActivity(intent);
+                break;
+            }
+            case 2:
+                load();
+                break;
+            case 3:
+                allowNetwork = !allowNetwork;
+                Store.prefs(this).edit().putBoolean("allowNetwork", allowNetwork).apply();
+                load();
+                Toast.makeText(this, allowNetwork ? "已允许网络" : "已禁止网络", Toast.LENGTH_SHORT).show();
+                break;
+            case 4: {
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("text/html");
+                share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+                try {
+                    startActivity(Intent.createChooser(share, "分享文件"));
+                } catch (Exception e) {
+                    Toast.makeText(this, "分享失败：" + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+                break;
+            }
+            default:
+                break;
+        }
     }
 
     private void configureWebView() {
@@ -69,6 +125,7 @@ public class ViewerActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 21) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
+        webView.setBackgroundColor(0xFFFFFFFF);
 
         webView.setWebViewClient(new WebViewClient() {
 
@@ -125,81 +182,44 @@ public class ViewerActivity extends Activity {
     }
 
     private void load() {
-        String css =
-                "(function(){var head=document.head;if(!head)return;" +
-                "var m=document.querySelector('meta[name=\"viewport\"]');" +
-                "if(!m){m=document.createElement('meta');m.name='viewport';head.appendChild(m);}" +
-                "if(m.content.indexOf('viewport-fit')<0){m.content='width=device-width,initial-scale=1,viewport-fit=cover';}" +
-                "var st=document.createElement('style');" +
-                "st.textContent='body{padding-bottom:env(safe-area-inset-bottom,0px)!important;}';" +
-                "head.appendChild(st);})();";
         webView.loadUrl("file://" + file.getAbsolutePath());
-        webView.evaluateJavascript(css, null);
+        webView.evaluateJavascript(safeAreaScript(), null);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        boolean favorite = Store.isFavorite(this, Store.relative(Store.root(this), file));
-        menu.add(0, 1, 0, favorite ? "取消收藏" : "添加到收藏");
-        menu.add(0, 2, 1, "编辑源代码");
-        menu.add(0, 3, 2, "重新加载");
-        menu.add(0, 4, 3, allowNetwork ? "网络访问：允许" : "网络访问：禁止");
-        menu.add(0, 5, 4, "分享文件");
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case 1: {
-                Store.toggleFavorite(this, Store.relative(Store.root(this), file));
-                invalidateOptionsMenu();
-                Toast.makeText(this, "已更新收藏", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            case 2: {
-                Intent intent = new Intent(this, EditorActivity.class);
-                intent.putExtra("path", file.getAbsolutePath());
-                startActivity(intent);
-                return true;
-            }
-            case 3:
-                load();
-                return true;
-            case 4:
-                allowNetwork = !allowNetwork;
-                Store.prefs(this).edit().putBoolean("allowNetwork", allowNetwork).apply();
-                invalidateOptionsMenu();
-                load();
-                Toast.makeText(this, allowNetwork ? "已允许网络" : "已禁止网络", Toast.LENGTH_SHORT).show();
-                return true;
-            case 5: {
-                Intent share = new Intent(Intent.ACTION_SEND);
-                share.setType("text/html");
-                share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-                try {
-                    startActivity(Intent.createChooser(share, "分享文件"));
-                } catch (Exception e) {
-                    Toast.makeText(this, "分享失败：" + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-                return true;
-            }
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+    /** 让页面自己避让底部手势条；顶部由自绘顶栏保证 */
+    private String safeAreaScript() {
+        return "(function(){try{"
+                + "var head=document.head;if(!head){return;}"
+                + "var m=document.querySelector('meta[name=\"viewport\"]');"
+                + "if(!m){m=document.createElement('meta');m.name='viewport';head.appendChild(m);}"
+                + "if(m.content.indexOf('viewport-fit')<0){m.content='width=device-width,initial-scale=1,viewport-fit=cover';}"
+                + "var p=document.createElement('div');"
+                + "p.style.cssText='position:fixed;left:0;top:0;width:1px;height:0;visibility:hidden;';"
+                + "p.style.height='env(safe-area-inset-bottom, 0px)';"
+                + "document.body.appendChild(p);"
+                + "var bottom=p.getBoundingClientRect().height;p.remove();"
+                + "if(!window.__aidouSafe){window.__aidouSafe={pb:parseFloat(getComputedStyle(document.body).paddingBottom)||0};}"
+                + "var old=document.getElementById('aidou-safe');if(old){old.remove();}"
+                + "if(bottom>0.5){var st=document.createElement('style');st.id='aidou-safe';"
+                + "st.textContent='body{padding-bottom:'+(window.__aidouSafe.pb+bottom)+'px !important;}';head.appendChild(st);}"
+                + "}catch(e){}})();";
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // 从编辑器回来：文件可能被改了，重新加载
+        // 从编辑器回来时文件可能改过
         load();
+        if (shell != null) {
+            shell.setTitle(file.getName());
+        }
     }
 
     @Override
     protected void onDestroy() {
         if (webView != null) {
             webView.destroy();
+            webView = null;
         }
         super.onDestroy();
     }

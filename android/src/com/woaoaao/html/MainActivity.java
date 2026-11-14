@@ -2,7 +2,6 @@ package com.woaoaao.html;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -11,13 +10,12 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -35,6 +33,7 @@ public class MainActivity extends Activity {
 
     private ListView listView;
     private TextView emptyView;
+    private Ui.Shell shell;
     private final List<Store.Item> items = new ArrayList<Store.Item>();
     private boolean favoritesOnly = false;
     private FileAdapter adapter;
@@ -44,26 +43,44 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         favoritesOnly = getIntent().getBooleanExtra("favorites", false);
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.WHITE);
+        shell = Ui.build(this, favoritesOnly ? "收藏夹" : "爱豆",
+                new Ui.MenuProvider() {
+                    @Override
+                    public String[] items() {
+                        return new String[]{
+                                "导入文件",
+                                "从剪贴板新建",
+                                "刷新",
+                                favoritesOnly ? "全部文件" : "收藏夹",
+                                "设置"
+                        };
+                    }
+                },
+                new Ui.MenuHandler() {
+                    @Override
+                    public void onSelected(int index) {
+                        handleMenu(index);
+                    }
+                });
+
+        FrameLayout contentBox = new FrameLayout(this);
+        shell.content.addView(contentBox, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         listView = new ListView(this);
-        LinearLayout.LayoutParams listParams =
-                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        root.addView(listView, listParams);
+        listView.setDividerHeight(1);
+        contentBox.addView(listView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         emptyView = new TextView(this);
-        emptyView.setText("还没有 HTML 文件\n点右上角「⋮」→ 导入文件\n（也可以把文件放到 文件管理 → Android/data/com.woaoaao.html/files/HTML）");
+        emptyView.setText("还没有 HTML 文件\n点右上角「⋮」→ 导入文件\n也可以从其它 App 分享 html 给「爱豆」");
         emptyView.setTextColor(Color.GRAY);
         emptyView.setTextSize(14);
         emptyView.setGravity(android.view.Gravity.CENTER);
         emptyView.setPadding(48, 32, 48, 32);
         emptyView.setVisibility(View.GONE);
-        root.addView(emptyView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 2f));
-
-        setContentView(root);
+        contentBox.addView(emptyView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         adapter = new FileAdapter();
         listView.setAdapter(adapter);
@@ -83,9 +100,32 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
+    }
 
-        if (getActionBar() != null) {
-            getActionBar().setTitle(favoritesOnly ? "收藏夹" : "爱豆");
+    private void handleMenu(int index) {
+        switch (index) {
+            case 0:
+                pickFile();
+                break;
+            case 1:
+                newFromClipboard();
+                break;
+            case 2:
+                reload();
+                Toast.makeText(this, "已刷新", Toast.LENGTH_SHORT).show();
+                break;
+            case 3: {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.putExtra("favorites", !favoritesOnly);
+                startActivity(intent);
+                finish();
+                break;
+            }
+            case 4:
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+            default:
+                break;
         }
     }
 
@@ -101,43 +141,6 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIncomingIntent(intent);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, 1, 0, "导入文件");
-        menu.add(0, 2, 1, "从剪贴板新建");
-        menu.add(0, 3, 2, "刷新");
-        menu.add(0, 4, 3, favoritesOnly ? "全部文件" : "收藏夹");
-        menu.add(0, 5, 4, "设置");
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case 1:
-                pickFile();
-                return true;
-            case 2:
-                newFromClipboard();
-                return true;
-            case 3:
-                reload();
-                Toast.makeText(this, "已刷新", Toast.LENGTH_SHORT).show();
-                return true;
-            case 4:
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.putExtra("favorites", !favoritesOnly);
-                startActivity(intent);
-                finish();
-                return true;
-            case 5:
-                startActivity(new Intent(this, SettingsActivity.class));
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 
     private void reload() {
@@ -160,7 +163,6 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"text/html", "text/plain", "text/*", "application/json"});
         try {
             startActivityForResult(intent, REQUEST_IMPORT);
         } catch (Exception e) {
@@ -218,12 +220,9 @@ public class MainActivity extends Activity {
         final EditText nameField = new EditText(this);
         nameField.setHint("文件名，例如 index.html");
         nameField.setText("新建页面.html");
-        if (clipboard.length() == 0) {
-            Toast.makeText(this, "剪贴板里没有文本，将创建空白页面", Toast.LENGTH_SHORT).show();
-        }
 
         new AlertDialog.Builder(this)
-                .setTitle("从剪贴板新建")
+                .setTitle(clipboard.length() > 0 ? "从剪贴板新建" : "新建空白页面")
                 .setView(nameField)
                 .setPositiveButton("创建", new DialogInterface.OnClickListener() {
                     @Override
@@ -283,7 +282,6 @@ public class MainActivity extends Activity {
     private void showItemMenu(final Store.Item item) {
         final String[] options = new String[]{
                 item.favorite ? "取消收藏" : "收藏",
-                "重命名（暂不支持）",
                 "删除"
         };
         new AlertDialog.Builder(this)
@@ -294,7 +292,7 @@ public class MainActivity extends Activity {
                         if (which == 0) {
                             Store.toggleFavorite(MainActivity.this, item.rel);
                             reload();
-                        } else if (which == 2) {
+                        } else if (which == 1) {
                             new AlertDialog.Builder(MainActivity.this)
                                     .setTitle("删除 " + item.name + "？")
                                     .setMessage("文件会从 App 目录里删掉，无法恢复。")
@@ -339,16 +337,18 @@ public class MainActivity extends Activity {
             if (convertView == null) {
                 row = new LinearLayout(MainActivity.this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
-                row.setPadding(28, 18, 28, 18);
+                row.setPadding(Ui.dp(MainActivity.this, 20), Ui.dp(MainActivity.this, 14),
+                        Ui.dp(MainActivity.this, 20), Ui.dp(MainActivity.this, 14));
                 row.setGravity(android.view.Gravity.CENTER_VERTICAL);
 
                 ImageView icon = new ImageView(MainActivity.this);
                 icon.setImageResource(R.drawable.ic_doc);
-                row.addView(icon, new LinearLayout.LayoutParams(56, 56));
+                row.addView(icon, new LinearLayout.LayoutParams(
+                        Ui.dp(MainActivity.this, 28), Ui.dp(MainActivity.this, 28)));
 
                 LinearLayout texts = new LinearLayout(MainActivity.this);
                 texts.setOrientation(LinearLayout.VERTICAL);
-                texts.setPadding(20, 0, 0, 0);
+                texts.setPadding(Ui.dp(MainActivity.this, 14), 0, 0, 0);
                 row.addView(texts, new LinearLayout.LayoutParams(0,
                         ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -361,7 +361,7 @@ public class MainActivity extends Activity {
                 TextView meta = new TextView(MainActivity.this);
                 meta.setTextSize(12);
                 meta.setTextColor(Color.parseColor("#888888"));
-                meta.setPadding(0, 4, 0, 0);
+                meta.setPadding(0, Ui.dp(MainActivity.this, 3), 0, 0);
                 texts.addView(meta);
 
                 holder = new ViewHolder(name, meta);
@@ -372,8 +372,7 @@ public class MainActivity extends Activity {
             }
 
             Store.Item item = items.get(position);
-            String prefix = item.favorite ? "★ " : "";
-            holder.name.setText(prefix + item.name);
+            holder.name.setText((item.favorite ? "★ " : "") + item.name);
             holder.meta.setText(Store.sizeText(item.size) + " · " + Store.dateText(item.modified));
             return convertView;
         }
