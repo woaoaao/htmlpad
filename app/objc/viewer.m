@@ -1059,16 +1059,11 @@ static NSString *const kViewportJS =
     UIBarButtonItem *search = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSearch
                                                                            target:self
                                                                            action:@selector(presentFind)];
-    UIBarButtonItem *edit = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"square.and.pencil"]
-                                                             style:UIBarButtonItemStylePlain
-                                                            target:self
-                                                            action:@selector(openSourceEditor)];
-    edit.accessibilityLabel = @"编辑源代码";
     UIBarButtonItem *more = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"ellipsis.circle"]
                                                             style:UIBarButtonItemStylePlain
                                                            target:self
                                                            action:@selector(showMoreSheet)];
-    self.navigationItem.rightBarButtonItems = @[more, edit, search];
+    self.navigationItem.rightBarButtonItems = @[more, search];
 }
 
 /// 直接进入源码编辑器（工具栏快捷入口）
