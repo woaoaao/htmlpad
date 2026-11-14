@@ -439,7 +439,6 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) UISearchController *searchController;
 @property (nonatomic, copy) NSString *keyword;
-@property (nonatomic, strong) UILabel *logLabel;
 @property (nonatomic, strong) UIButton *emptyButton;
 @end
 
@@ -500,26 +499,6 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
         [self.emptyButton.heightAnchor constraintEqualToConstant:46],
     ]];
 
-    self.logLabel = [[UILabel alloc] init];
-    self.logLabel.font = [UIFont systemFontOfSize:10];
-    self.logLabel.textColor = [UIColor secondaryLabelColor];
-    self.logLabel.numberOfLines = 2;
-    self.logLabel.textAlignment = NSTextAlignmentCenter;
-    self.logLabel.backgroundColor = [UIColor secondarySystemBackgroundColor];
-    self.logLabel.text = @"日志(点我复制)：";
-    self.logLabel.userInteractionEnabled = YES;
-    self.logLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.logLabel addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                               action:@selector(copyLog)]];
-    [self.view addSubview:self.logLabel];
-    [NSLayoutConstraint activateConstraints:@[
-        [self.logLabel.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [self.logLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.logLabel.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
-        [self.logLabel.heightAnchor constraintEqualToConstant:30],
-    ]];
-    gLogLabel = self.logLabel;
-    self.tableView.contentInset = UIEdgeInsetsMake(0, 0, 44, 0);
 
     self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchController.searchResultsUpdater = self;
@@ -634,11 +613,6 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     [self refreshEmptyState];
     [refreshControl endRefreshing];
     LogEvent(@"已刷新：%lu 个文件", (unsigned long)[VStore shared].files.count);
-}
-
-- (void)copyLog {
-    [UIPasteboard generalPasteboard].string = LogText();
-    LogEvent(@"日志已复制到剪贴板");
 }
 
 #pragma mark 过滤
@@ -901,7 +875,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         case 0: return 1;
         case 1: return 3;
         case 2: return 3;
-        default: return 2;
+        default: return 3;
     }
 }
 
@@ -959,6 +933,9 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         if (indexPath.row == 0) {
             cell.textLabel.text = @"版本";
             cell.detailTextLabel.text = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] ?: @"1.0";
+        } else if (indexPath.row == 1) {
+            cell.textLabel.text = @"作者";
+            cell.detailTextLabel.text = @"小王";
         } else {
             cell.textLabel.text = @"纯本地运行 · 无广告 · 无内购 · 不收集数据";
             cell.textLabel.font = [UIFont systemFontOfSize:13];
@@ -1131,11 +1108,23 @@ static NSString *const kViewportJS =
     UIBarButtonItem *search = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSearch
                                                                            target:self
                                                                            action:@selector(presentFind)];
+    UIBarButtonItem *edit = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"square.and.pencil"]
+                                                             style:UIBarButtonItemStylePlain
+                                                            target:self
+                                                            action:@selector(openSourceEditor)];
+    edit.accessibilityLabel = @"编辑源代码";
     UIBarButtonItem *more = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"ellipsis.circle"]
                                                             style:UIBarButtonItemStylePlain
                                                            target:self
                                                            action:@selector(showMoreSheet)];
-    self.navigationItem.rightBarButtonItems = @[more, search];
+    self.navigationItem.rightBarButtonItems = @[more, edit, search];
+}
+
+/// 直接进入源码编辑器（工具栏快捷入口）
+- (void)openSourceEditor {
+    LogEvent(@"点击编辑按钮");
+    SourceController *controller = [[SourceController alloc] initWithFile:self.file];
+    [self.navigationController pushViewController:controller animated:YES];
 }
 
 - (void)showMoreSheet {
@@ -1155,8 +1144,7 @@ static NSString *const kViewportJS =
     [sheet addAction:[UIAlertAction actionWithTitle:@"编辑源代码"
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *action) {
-        SourceController *controller = [[SourceController alloc] initWithFile:weakSelf.file];
-        [weakSelf.navigationController pushViewController:controller animated:YES];
+        [weakSelf openSourceEditor];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"重新加载"
                                               style:UIAlertActionStyleDefault
