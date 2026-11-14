@@ -5,54 +5,27 @@ sdk ok
 Ubuntu clang version 21.1.8 (6ubuntu1)
 Target: x86_64-pc-linux-gnu
 === 编译 viewer.m ===
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:511:71: warning: 'UIDocumentPickerModeOpen' is deprecated: first deprecated in iOS 14.0 - Use appropriate initializers instead [-Wdeprecated-declarations]
-  511 |                                                                inMode:UIDocumentPickerModeOpen];
-      |                                                                       ^
-/home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:29:29: note: 'UIDocumentPickerMode' has been explicitly marked deprecated here
-   29 | typedef NS_ENUM(NSUInteger, UIDocumentPickerMode) {
-      |                             ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:510:49: warning: 'initWithDocumentTypes:inMode:' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
-  510 |         [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.html", @"public.plain-text"]
-      |                                                 ^~~~~~~~~~~~~~~~~~~~~
-      |                                                 use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead
-/home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:39:1: note: 'initWithDocumentTypes:inMode:' has been explicitly marked deprecated here
-   39 | - (instancetype)initWithDocumentTypes:(NSArray <NSString *>*)allowedUTIs inMode:(UIDocumentPickerMode)mode NS_DESIGNATED_INITIALIZER API_DEPRECATED_WITH_REPLACEMENT("use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead", ios(8.0, 14.0)) API_UNAVAILABLE(tvos);
-      | ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:520:71: warning: 'UIDocumentPickerModeOpen' is deprecated: first deprecated in iOS 14.0 - Use appropriate initializers instead [-Wdeprecated-declarations]
-  520 |                                                                inMode:UIDocumentPickerModeOpen];
-      |                                                                       ^
-/home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:29:29: note: 'UIDocumentPickerMode' has been explicitly marked deprecated here
-   29 | typedef NS_ENUM(NSUInteger, UIDocumentPickerMode) {
-      |                             ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:519:49: warning: 'initWithDocumentTypes:inMode:' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
-  519 |         [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.folder"]
-      |                                                 ^~~~~~~~~~~~~~~~~~~~~
-      |                                                 use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead
-/home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:39:1: note: 'initWithDocumentTypes:inMode:' has been explicitly marked deprecated here
-   39 | - (instancetype)initWithDocumentTypes:(NSArray <NSString *>*)allowedUTIs inMode:(UIDocumentPickerMode)mode NS_DESIGNATED_INITIALIZER API_DEPRECATED_WITH_REPLACEMENT("use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead", ios(8.0, 14.0)) API_UNAVAILABLE(tvos);
-      | ^
-4 warnings generated.
 cc exit=0
 === 链接 ===
 link exit=0
 === 组装 .app ===
 === 检查 ===
 /home/runner/work/htmlpad/htmlpad/out-viewer/Payload/HTML.app/HTML: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-total 212
-drwxr-xr-x 2 runner runner   4096 Nov 14 00:10 .
-drwxr-xr-x 3 runner runner   4096 Nov 14 00:10 ..
--rw-r--r-- 1 runner runner   2520 Nov 14 00:10 AppIcon29x29@2x.png
--rw-r--r-- 1 runner runner   4312 Nov 14 00:10 AppIcon29x29@3x.png
--rw-r--r-- 1 runner runner   3196 Nov 14 00:10 AppIcon40x40@2x.png
--rw-r--r-- 1 runner runner   5484 Nov 14 00:10 AppIcon40x40@3x.png
--rw-r--r-- 1 runner runner   5484 Nov 14 00:10 AppIcon60x60@2x.png
--rw-r--r-- 1 runner runner   8727 Nov 14 00:10 AppIcon60x60@3x.png
--rw-r--r-- 1 runner runner   6886 Nov 14 00:10 AppIcon76x76@2x~ipad.png
--rwxr-xr-x 1 runner runner 174016 Nov 14 00:10 HTML
--rw-r--r-- 1 runner runner   2400 Nov 14 00:10 Info.plist
+total 216
+drwxr-xr-x 2 runner runner   4096 Nov 14 00:23 .
+drwxr-xr-x 3 runner runner   4096 Nov 14 00:23 ..
+-rw-r--r-- 1 runner runner   2520 Nov 14 00:23 AppIcon29x29@2x.png
+-rw-r--r-- 1 runner runner   4312 Nov 14 00:23 AppIcon29x29@3x.png
+-rw-r--r-- 1 runner runner   3196 Nov 14 00:23 AppIcon40x40@2x.png
+-rw-r--r-- 1 runner runner   5484 Nov 14 00:23 AppIcon40x40@3x.png
+-rw-r--r-- 1 runner runner   5484 Nov 14 00:23 AppIcon60x60@2x.png
+-rw-r--r-- 1 runner runner   8727 Nov 14 00:23 AppIcon60x60@3x.png
+-rw-r--r-- 1 runner runner   6886 Nov 14 00:23 AppIcon76x76@2x~ipad.png
+-rwxr-xr-x 1 runner runner 191896 Nov 14 00:23 HTML
+-rw-r--r-- 1 runner runner   2400 Nov 14 00:23 Info.plist
 plist ok: com.woaoaao.html HTML min 14.5
 === 打包 ipa ===
--rw-r--r-- 1 runner runner 86761 Nov 14 00:10 /home/runner/work/htmlpad/htmlpad/HTML-viewer-unsigned.ipa
+-rw-r--r-- 1 runner runner 88550 Nov 14 00:23 /home/runner/work/htmlpad/htmlpad/HTML-viewer-unsigned.ipa
 entries: 11
    Payload/
    Payload/HTML.app/
