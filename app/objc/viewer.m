@@ -71,6 +71,39 @@ static NSString *ReadTextFile(NSString *path) {
 }
 
 
+
+#pragma mark - 现场日志（点一下就知道走到哪一步）
+
+static NSMutableArray<NSString *> *gLogLines = nil;
+static __weak UILabel *gLogLabel = nil;
+
+static void LogEvent(NSString *format, ...) {
+    va_list args;
+    va_start(args, format);
+    NSString *text = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+
+    NSLog(@"[HTML] %@", text);
+
+    if (!gLogLines) { gLogLines = [NSMutableArray array]; }
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.dateFormat = @"HH:mm:ss";
+    [gLogLines addObject:[NSString stringWithFormat:@"%@ %@", [formatter stringFromDate:[NSDate date]], text]];
+    while (gLogLines.count > 40) { [gLogLines removeObjectAtIndex:0]; }
+
+    UILabel *label = gLogLabel;
+    if (label) {
+        NSUInteger count = gLogLines.count;
+        NSUInteger from = count > 2 ? count - 2 : 0;
+        NSArray *tail = [gLogLines subarrayWithRange:NSMakeRange(from, count - from)];
+        label.text = [NSString stringWithFormat:@"日志(点我复制)：%@", [tail componentsJoinedByString:@" | "]];
+    }
+}
+
+static NSString *LogText(void) {
+    return gLogLines ? [gLogLines componentsJoinedByString:@"\n"] : @"(空)";
+}
+
 /// 统一的弹出入口：
 /// 从 UIMenu / UIContextualAction 的回调里同步 present 会被 UIKit 静默丢弃，
 /// 这里延到下一个 runloop，并在失败时给出可见提示，方便定位问题。
@@ -81,11 +114,13 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
         while (top.presentedViewController) {
             top = top.presentedViewController;
         }
+        LogEvent(@"准备弹出 %@", debugName);
         [top presentViewController:target animated:YES completion:nil];
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.9 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
             if (top.presentedViewController != target) {
+                LogEvent(@"%@ 弹不出来", debugName);
                 UIAlertController *alert =
                     [UIAlertController alertControllerWithTitle:@"无法打开"
                                                         message:[NSString stringWithFormat:@"%@ 没有弹出来", debugName]
@@ -346,6 +381,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) UISearchController *searchController;
 @property (nonatomic, copy) NSString *keyword;
+@property (nonatomic, strong) UILabel *logLabel;
 @end
 
 @implementation FilesController
@@ -387,6 +423,26 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 
     [self buildAddMenu];
 
+    self.logLabel = [[UILabel alloc] init];
+    self.logLabel.font = [UIFont systemFontOfSize:10];
+    self.logLabel.textColor = [UIColor secondaryLabelColor];
+    self.logLabel.numberOfLines = 2;
+    self.logLabel.textAlignment = NSTextAlignmentCenter;
+    self.logLabel.backgroundColor = [UIColor secondarySystemBackgroundColor];
+    self.logLabel.text = @"日志(点我复制)：";
+    self.logLabel.userInteractionEnabled = YES;
+    self.logLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.logLabel addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                               action:@selector(copyLog)]];
+    [self.view addSubview:self.logLabel];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.logLabel.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.logLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.logLabel.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
+        [self.logLabel.heightAnchor constraintEqualToConstant:30],
+    ]];
+    gLogLabel = self.logLabel;
+
     self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchController.searchResultsUpdater = self;
     self.searchController.obscuresBackgroundDuringPresentation = NO;
@@ -419,31 +475,47 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 }
 
 - (void)buildAddMenu {
-    __weak typeof(self) weakSelf = self;
-    UIAction *openFile = [UIAction actionWithTitle:@"打开 HTML 文件"
-                                            image:[UIImage systemImageNamed:@"doc.badge.plus"]
-                                       identifier:nil
-                                          handler:^(UIAction *action) { [weakSelf pickFile]; }];
-    UIAction *paste = [UIAction actionWithTitle:@"粘贴代码"
-                                         image:[UIImage systemImageNamed:@"doc.on.clipboard"]
-                                    identifier:nil
-                                       handler:^(UIAction *action) { [weakSelf presentPaste]; }];
-    UIAction *folder = [UIAction actionWithTitle:@"打开文件夹"
-                                           image:[UIImage systemImageNamed:@"folder.badge.plus"]
-                                      identifier:nil
-                                         handler:^(UIAction *action) { [weakSelf pickFolder]; }];
+    self.navigationItem.rightBarButtonItem =
+        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd
+                                                     target:self
+                                                     action:@selector(showAddSheet)];
+}
 
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
-    [button setImage:[UIImage systemImageNamed:@"plus.circle.fill"] forState:UIControlStateNormal];
-    button.menu = [UIMenu menuWithTitle:@"" children:@[openFile, paste, folder]];
-    button.showsMenuAsPrimaryAction = YES;
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:button];
+- (void)showAddSheet {
+    LogEvent(@"点到了 +");
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:nil
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    [sheet addAction:[UIAlertAction actionWithTitle:@"打开 HTML 文件"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf pickFile];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"粘贴代码"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf presentPaste];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"打开文件夹"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf pickFolder];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    sheet.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
+    PresentSafely(self, sheet, @"添加菜单");
 }
 
 - (void)refreshEmptyState {
     BOOL hasFiles = [VStore shared].files.count > 0;
     self.emptyLabel.hidden = hasFiles;
     self.tableView.hidden = !hasFiles;
+}
+
+- (void)copyLog {
+    [UIPasteboard generalPasteboard].string = LogText();
+    LogEvent(@"日志已复制到剪贴板");
 }
 
 #pragma mark 过滤
@@ -549,6 +621,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 }
 
 - (void)pickFile {
+    LogEvent(@"pickFile 开始");
     NSMutableArray<UTType *> *types = [NSMutableArray array];
     UTType *html = [UTType typeWithIdentifier:@"public.html"];
     if (html) { [types addObject:html]; }
@@ -564,6 +637,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 }
 
 - (void)pickFolder {
+    LogEvent(@"pickFolder 开始");
     UTType *folderType = [UTType typeWithIdentifier:@"public.folder"];
     UIDocumentPickerViewController *picker =
         [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:(folderType ? @[folderType] : @[])
@@ -590,6 +664,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 }
 
 - (void)presentPaste {
+    LogEvent(@"presentPaste 开始");
     PasteController *paste = [[PasteController alloc] init];
     __weak typeof(self) weakSelf = self;
     paste.onSave = ^(NSString *name, NSString *code) {
@@ -958,124 +1033,140 @@ static NSString *const kViewportJS =
 #pragma mark 工具栏 / 菜单
 
 - (void)buildToolbar {
-    __weak typeof(self) weakSelf = self;
-
-    UIButton *searchButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [searchButton setImage:[UIImage systemImageNamed:@"magnifyingglass"] forState:UIControlStateNormal];
-    [searchButton addAction:[UIAction actionWithHandler:^(UIAction *action) {
-        [weakSelf presentFind];
-    }] forControlEvents:UIControlEventTouchUpInside];
-
-    UIButton *moreButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [moreButton setImage:[UIImage systemImageNamed:@"ellipsis.circle.fill"] forState:UIControlStateNormal];
-    moreButton.showsMenuAsPrimaryAction = YES;
-    [self rebuildMoreMenu:moreButton];
-
-    UIBarButtonItem *searchItem = [[UIBarButtonItem alloc] initWithCustomView:searchButton];
-    UIBarButtonItem *moreItem = [[UIBarButtonItem alloc] initWithCustomView:moreButton];
-    self.navigationItem.rightBarButtonItems = @[moreItem, searchItem];
+    UIBarButtonItem *search = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSearch
+                                                                           target:self
+                                                                           action:@selector(presentFind)];
+    UIBarButtonItem *more = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"ellipsis.circle"]
+                                                            style:UIBarButtonItemStylePlain
+                                                           target:self
+                                                           action:@selector(showMoreSheet)];
+    self.navigationItem.rightBarButtonItems = @[more, search];
 }
 
-- (void)rebuildMoreMenu:(UIButton *)button {
+- (void)showMoreSheet {
+    LogEvent(@"点到了 ⋯");
+    BOOL favorite = [[VStore shared] isFavorite:self.file];
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:nil
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
     __weak typeof(self) weakSelf = self;
 
-    BOOL favorite = [[VStore shared] isFavorite:self.file];
-    UIAction *fav = [UIAction actionWithTitle:(favorite ? @"取消收藏" : @"添加到收藏")
-                                        image:[UIImage systemImageNamed:(favorite ? @"star.slash" : @"star")]
-                                   identifier:nil
-                                      handler:^(UIAction *action) {
+    [sheet addAction:[UIAlertAction actionWithTitle:(favorite ? @"取消收藏" : @"添加到收藏")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
         [[VStore shared] toggleFavorite:weakSelf.file];
-        [weakSelf rebuildMoreMenu:button];
-    }];
-
-    UIAction *source = [UIAction actionWithTitle:@"查看源代码"
-                                           image:[UIImage systemImageNamed:@"chevron.left.forwardslash.chevron.right"]
-                                      identifier:nil
-                                         handler:^(UIAction *action) {
+        LogEvent(favorite ? @"已取消收藏" : @"已收藏");
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"查看源代码"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
         SourceController *controller = [[SourceController alloc] initWithFile:weakSelf.file];
         [weakSelf.navigationController pushViewController:controller animated:YES];
-    }];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"重新加载"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf.webView reload];
+        LogEvent(@"已重新加载");
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"显示方式…"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf showStyleSheet];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"网络访问…"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf showNetworkSheet];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"外部链接…"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf showExternalSheet];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"分享文件"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf shareTapped];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
 
-    UIAction *reload = [UIAction actionWithTitle:@"重新加载"
-                                           image:[UIImage systemImageNamed:@"arrow.clockwise"]
-                                      identifier:nil
-                                         handler:^(UIAction *action) { [weakSelf.webView reload]; }];
-
-    UIAction *systemStyle = [UIAction actionWithTitle:@"跟随系统"
-                                                image:[UIImage systemImageNamed:(weakSelf.styleMode == 0 ? @"checkmark" : @"circle.lefthalf.filled")]
-                                           identifier:nil
-                                              handler:^(UIAction *action) { [weakSelf setStyleMode:0 button:button]; }];
-    UIAction *lightStyle = [UIAction actionWithTitle:@"浅色"
-                                               image:[UIImage systemImageNamed:(weakSelf.styleMode == 1 ? @"checkmark" : @"sun.max")]
-                                          identifier:nil
-                                             handler:^(UIAction *action) { [weakSelf setStyleMode:1 button:button]; }];
-    UIAction *darkStyle = [UIAction actionWithTitle:@"深色"
-                                              image:[UIImage systemImageNamed:(weakSelf.styleMode == 2 ? @"checkmark" : @"moon")]
-                                         identifier:nil
-                                            handler:^(UIAction *action) { [weakSelf setStyleMode:2 button:button]; }];
-    UIMenu *styleMenu = [UIMenu menuWithTitle:@"显示"
-                                        image:[UIImage systemImageNamed:@"circle.lefthalf.filled"]
-                                   identifier:nil
-                                      options:0
-                                     children:@[systemStyle, lightStyle, darkStyle]];
-
-    UIAction *allowNetwork = [UIAction actionWithTitle:@"允许"
-                                                 image:[UIImage systemImageNamed:(weakSelf.networkAllowed ? @"checkmark" : @"wifi")]
-                                            identifier:nil
-                                               handler:^(UIAction *action) { [weakSelf setNetworkAllowed:YES button:button]; }];
-    UIAction *denyNetwork = [UIAction actionWithTitle:@"禁止"
-                                                image:[UIImage systemImageNamed:(weakSelf.networkAllowed ? @"wifi.slash" : @"checkmark")]
-                                           identifier:nil
-                                              handler:^(UIAction *action) { [weakSelf setNetworkAllowed:NO button:button]; }];
-    UIMenu *networkMenu = [UIMenu menuWithTitle:@"网络访问"
-                                          image:[UIImage systemImageNamed:(weakSelf.networkAllowed ? @"network" : @"network.slash")]
-                                     identifier:nil
-                                        options:0
-                                       children:@[allowNetwork, denyNetwork]];
-
-    UIAction *inApp = [UIAction actionWithTitle:@"App 内打开"
-                                          image:[UIImage systemImageNamed:(weakSelf.externalInSafari ? @"iphone" : @"checkmark")]
-                                     identifier:nil
-                                        handler:^(UIAction *action) { [weakSelf setExternalInSafari:NO button:button]; }];
-    UIAction *inSafari = [UIAction actionWithTitle:@"Safari 中打开"
-                                             image:[UIImage systemImageNamed:(weakSelf.externalInSafari ? @"checkmark" : @"safari")]
-                                        identifier:nil
-                                           handler:^(UIAction *action) { [weakSelf setExternalInSafari:YES button:button]; }];
-    UIMenu *externalMenu = [UIMenu menuWithTitle:@"外部链接"
-                                            image:[UIImage systemImageNamed:@"arrow.up.right.square"]
-                                       identifier:nil
-                                          options:0
-                                         children:@[inApp, inSafari]];
-
-    UIAction *share = [UIAction actionWithTitle:@"分享文件"
-                                          image:[UIImage systemImageNamed:@"square.and.arrow.up"]
-                                     identifier:nil
-                                        handler:^(UIAction *action) { [weakSelf shareTapped]; }];
-
-    button.menu = [UIMenu menuWithTitle:@""
-                               children:@[fav, source, reload, styleMenu, networkMenu, externalMenu, share]];
+    sheet.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItems.firstObject;
+    PresentSafely(self, sheet, @"更多菜单");
 }
 
-- (void)setStyleMode:(NSInteger)mode button:(UIButton *)button {
-    self.styleMode = mode;
+- (void)showStyleSheet {
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"显示方式"
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    NSArray *titles = @[@"跟随系统", @"浅色", @"深色"];
+    for (NSInteger index = 0; index < titles.count; index++) {
+        NSString *mark = (weakSelf.styleMode == index) ? @"✓ " : @"";
+        [sheet addAction:[UIAlertAction actionWithTitle:[mark stringByAppendingString:titles[index]]
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(UIAlertAction *action) {
+            [weakSelf setStyleMode:index];
+            [weakSelf showStyleSheet];
+        }]];
+    }
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    sheet.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItems.firstObject;
+    PresentSafely(self, sheet, @"显示方式");
+}
+
+- (void)showNetworkSheet {
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"网络访问"
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    [sheet addAction:[UIAlertAction actionWithTitle:(weakSelf.networkAllowed ? @"✓ 允许" : @"允许")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) { [weakSelf setNetworkAllowed:YES]; }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:(weakSelf.networkAllowed ? @"禁止" : @"✓ 禁止")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) { [weakSelf setNetworkAllowed:NO]; }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    sheet.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItems.firstObject;
+    PresentSafely(self, sheet, @"网络访问");
+}
+
+- (void)showExternalSheet {
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"外部链接"
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    [sheet addAction:[UIAlertAction actionWithTitle:(weakSelf.externalInSafari ? @"App 内打开" : @"✓ App 内打开")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) { [weakSelf setExternalInSafari:NO]; }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:(weakSelf.externalInSafari ? @"✓ Safari 中打开" : @"Safari 中打开")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) { [weakSelf setExternalInSafari:YES]; }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    sheet.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItems.firstObject;
+    PresentSafely(self, sheet, @"外部链接");
+}
+
+- (void)setStyleMode:(NSInteger)mode {
+    _styleMode = mode;
     self.webView.overrideUserInterfaceStyle = StyleFromMode(mode);
-    [self rebuildMoreMenu:button];
+    LogEvent(@"显示方式 → %ld", (long)mode);
 }
 
-- (void)setNetworkAllowed:(BOOL)allowed button:(UIButton *)button {
-    self.networkAllowed = allowed;
+- (void)setNetworkAllowed:(BOOL)allowed {
+    _networkAllowed = allowed;
     if (allowed) {
         [self.webView.configuration.userContentController removeAllContentRuleLists];
         [self.webView reload];
     } else {
         [self applyBlockRuleList];
     }
-    [self rebuildMoreMenu:button];
+    LogEvent(@"网络访问 → %@", allowed ? @"允许" : @"禁止");
 }
 
-- (void)setExternalInSafari:(BOOL)safari button:(UIButton *)button {
-    self.externalInSafari = safari;
-    [self rebuildMoreMenu:button];
+- (void)setExternalInSafari:(BOOL)safari {
+    _externalInSafari = safari;
+    LogEvent(@"外部链接 → %@", safari ? @"Safari" : @"App 内");
 }
 
 - (void)presentFind {
