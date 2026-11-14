@@ -26,6 +26,7 @@ exit=0
 === 2) aapt2 link ===
 exit=0
 === 3) javac ===
+/home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/Ui.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/EditorActivity.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/SettingsActivity.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/Store.java
@@ -45,12 +46,12 @@ exit=0
 keytool exit=0
 apksigner exit=0
 === 检查 ===
--rw-r--r-- 1 runner runner 54153 Nov 14 05:03 /home/runner/work/htmlpad/htmlpad/AiDou.apk
+-rw-r--r-- 1 runner runner 58249 Nov 14 05:08 /home/runner/work/htmlpad/htmlpad/AiDou.apk
 V3.0 Signer: certificate DN: CN=AiDou, OU=AiDou, O=AiDou, L=CN, ST=CN, C=CN
-V3.0 Signer: certificate SHA-256 digest: 44a78f610eac05ec33d9e9f1eba9f1314851997e89f69e4f0034fad37f892228
-V3.0 Signer: certificate SHA-1 digest: 8189850cae0463127c2cadc05bb40a4b3b9b505c
-V3.0 Signer: certificate MD5 digest: cfe9626ff4c68e05947c318b759aeba5
-apk bytes: 54153 entries: 12
+V3.0 Signer: certificate SHA-256 digest: 452d81d896c99c635ce299e6352146f5db46808bfdf5892822130f89a78a9ac0
+V3.0 Signer: certificate SHA-1 digest: c37095ec3feeffeda86a44914c9676d897db1a89
+V3.0 Signer: certificate MD5 digest: 705655565ef2fad027ec2143b3376eea
+apk bytes: 58249 entries: 12
 has classes.dex: True
 has AndroidManifest: True
 APK_OK
