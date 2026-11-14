@@ -412,7 +412,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor systemBackgroundColor];
-    self.title = @"HTML";
+    self.title = @"爱豆";
 
     self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
     self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -618,7 +618,8 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@",
                                  FormatSize([file[@"size"] longLongValue]),
                                  FormatDate(file[@"modified"])];
-    cell.imageView.image = [UIImage systemImageNamed:@"chevron.left.forwardslash.chevron.right"];
+    cell.imageView.image = [UIImage systemImageNamed:@"doc.text.fill"];
+    cell.imageView.tintColor = [UIColor systemBlueColor];
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     if ([[VStore shared] isFavorite:file]) {
         UIImageView *star = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"star.fill"]];
@@ -769,7 +770,8 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@",
                                  FormatSize([file[@"size"] longLongValue]),
                                  FormatDate(file[@"modified"])];
-    cell.imageView.image = [UIImage systemImageNamed:@"star.fill"];
+    cell.imageView.image = [UIImage systemImageNamed:@"doc.text.fill"];
+    cell.imageView.tintColor = [UIColor systemOrangeColor];
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     return cell;
 }
@@ -900,7 +902,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
             cell.detailTextLabel.text = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] ?: @"1.0";
         } else if (indexPath.row == 1) {
             cell.textLabel.text = @"作者";
-            cell.detailTextLabel.text = @"小王";
+            cell.detailTextLabel.text = @"爱豆";
         } else {
             cell.textLabel.text = @"纯本地运行 · 无广告 · 无内购 · 不收集数据";
             cell.textLabel.font = [UIFont systemFontOfSize:13];
