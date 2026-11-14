@@ -57,8 +57,8 @@ ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/X
 
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
 
-Build description signature: 217b76bcbb855c7011814c0e8425ae8d
-Build description path: /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/XCBuildData/217b76bcbb855c7011814c0e8425ae8d.xcbuilddata
+Build description signature: 1258aede8a9277040263fbde2cb0d6be
+Build description path: /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/XCBuildData/1258aede8a9277040263fbde2cb0d6be.xcbuilddata
 ClangStatCache /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
     cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -o /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
@@ -71,13 +71,13 @@ CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermed
     cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
     builtin-create-build-directory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex
 
-WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML-3b32e482c47f970e00374e27e257a1f7-VFS-iphoneos/all-product-headers.yaml
-    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
-    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML-3b32e482c47f970e00374e27e257a1f7-VFS-iphoneos/all-product-headers.yaml
-
 CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos
     cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
     builtin-create-build-directory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML-3b32e482c47f970e00374e27e257a1f7-VFS-iphoneos/all-product-headers.yaml
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML-3b32e482c47f970e00374e27e257a1f7-VFS-iphoneos/all-product-headers.yaml
 
 CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
     cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
@@ -139,13 +139,13 @@ MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphone
     cd /Users/runner/work/htmlpad/htmlpad/app
     /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app
 
-MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned (in target 'HTML' from project 'HTML')
-    cd /Users/runner/work/htmlpad/htmlpad/app
-    /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned
-
 MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/unthinned (in target 'HTML' from project 'HTML')
     cd /Users/runner/work/htmlpad/htmlpad/app
     /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/unthinned
+
+MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned
 
 GenerateAssetSymbols /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets (in target 'HTML' from project 'HTML')
     cd /Users/runner/work/htmlpad/htmlpad/app
@@ -219,26 +219,26 @@ Ld /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/
     cd /Users/runner/work/htmlpad/htmlpad/app
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -Os -L/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -L/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -F/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -F/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -filelist /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.LinkFileList -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_lto.o -Xlinker -dependency_info -Xlinker /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML
 
-GenerateDSYMFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app.dSYM /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML (in target 'HTML' from project 'HTML')
-    cd /Users/runner/work/htmlpad/htmlpad/app
-    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app.dSYM
-
-ExtractAppIntentsMetadata (in target 'HTML' from project 'HTML')
-    cd /Users/runner/work/htmlpad/htmlpad/app
-    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name HTML --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.woaoaao.html --output /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML --dependency-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_dependency_info.dat --stringsdata-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList --metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
-2026-11-14 00:54:19.726 appintentsmetadataprocessor[2321:9817] Starting appintentsmetadataprocessor export
-2026-11-14 00:54:19.732 appintentsmetadataprocessor[2321:9817] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
-
 CopySwiftLibs /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
     cd /Users/runner/work/htmlpad/htmlpad/app
     builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Frameworks --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/PlugIns --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/SystemExtensions --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Extensions --platform iphoneos --toolchain /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
 Ignoring --strip-bitcode because --sign was not passed
 
+ExtractAppIntentsMetadata (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name HTML --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.woaoaao.html --output /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML --dependency-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_dependency_info.dat --stringsdata-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList --metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-11-14 01:03:13.915 appintentsmetadataprocessor[1644:7946] Starting appintentsmetadataprocessor export
+2026-11-14 01:03:13.928 appintentsmetadataprocessor[1644:7946] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+GenerateDSYMFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app.dSYM /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app.dSYM
+
 AppIntentsSSUTraining (in target 'HTML' from project 'HTML')
     cd /Users/runner/work/htmlpad/htmlpad/app
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Info.plist --temp-dir-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/ssu --bundle-id com.woaoaao.html --product-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --extracted-metadata-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Metadata.appintents --metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList --archive-ssu-assets
-2026-11-14 00:54:19.782 appintentsnltrainingprocessor[2326:9828] Parsing options for appintentsnltrainingprocessor
-2026-11-14 00:54:19.783 appintentsnltrainingprocessor[2326:9828] No AppShortcuts found - Skipping.
+2026-11-14 01:03:13.984 appintentsnltrainingprocessor[1646:7950] Parsing options for appintentsnltrainingprocessor
+2026-11-14 01:03:13.986 appintentsnltrainingprocessor[1646:7950] No AppShortcuts found - Skipping.
 
 RegisterExecutionPolicyException /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
     cd /Users/runner/work/htmlpad/htmlpad/app
