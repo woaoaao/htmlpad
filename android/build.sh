@@ -49,8 +49,14 @@ echo "=== 2) aapt2 link ==="
   --min-sdk-version 21 \
   --target-sdk-version 34 \
   --version-code 1 \
-  --version-name 1.0
-echo "exit=$?"
+  --version-name 1.0 \
+  --auto-add-overlay
+LINK_STATUS=$?
+echo "exit=$LINK_STATUS"
+if [ $LINK_STATUS -ne 0 ]; then
+  echo "!!! 资源链接失败，见上方错误"
+  exit 0
+fi
 
 echo "=== 3) javac ==="
 find "$APP/src" "$OUT/gen" -name "*.java" > "$OUT/sources.txt"
