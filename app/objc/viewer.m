@@ -1420,7 +1420,7 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 
 @end
 
-#pragma mark - 源代码（可编辑 + 搜索）
+#pragma mark - 源代码（可编辑 + 搜索 + 高亮）
 
 @interface SourceController () <UITextViewDelegate>
 @property (nonatomic, strong) NSDictionary *file;
@@ -1432,9 +1432,12 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 @property (nonatomic, strong) NSArray<NSValue *> *matches;
 @property (nonatomic, assign) NSInteger currentMatch;
 @property (nonatomic, assign) BOOL dirty;
+@property (nonatomic, assign) BOOL applyingHighlight;
 @end
 
 @implementation SourceController
+
+static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避免卡顿
 
 - (instancetype)initWithFile:(NSDictionary *)file {
     self = [super initWithNibName:nil bundle:nil];
@@ -1442,25 +1445,36 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
     return self;
 }
 
+- (UIFont *)codeFont {
+    return [UIFont monospacedSystemFontOfSize:13 weight:UIFontWeightRegular];
+}
+
+- (NSDictionary *)plainAttributes {
+    return @{
+        NSFontAttributeName: [self codeFont],
+        NSForegroundColorAttributeName: [UIColor labelColor],
+    };
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor systemBackgroundColor];
     self.title = @"源代码";
 
-    // ---- 编辑器
     self.textView = [[UITextView alloc] init];
     self.textView.delegate = self;
     self.textView.editable = YES;
-    self.textView.font = [UIFont monospacedSystemFontOfSize:13 weight:UIFontWeightRegular];
+    self.textView.font = [self codeFont];
     self.textView.autocorrectionType = UITextAutocorrectionTypeNo;
     self.textView.autocapitalizationType = UITextAutocapitalizationTypeNone;
     self.textView.spellCheckingType = UITextSpellCheckingTypeNo;
     self.textView.text = ReadTextFile(self.file[@"path"]);
-    self.textView.textContainerInset = UIEdgeInsetsMake(10, 10, 24, 10);
+    self.textView.typingAttributes = [self plainAttributes];
+    self.textView.textContainerInset = UIEdgeInsetsMake(10, 10, 28, 10);
     self.textView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.textView];
 
-    // ---- 查找条
+    // 查找条
     self.findBar = [[UIView alloc] init];
     self.findBar.backgroundColor = [UIColor secondarySystemBackgroundColor];
     self.findBar.translatesAutoresizingMaskIntoConstraints = NO;
@@ -1468,7 +1482,7 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
     [self.view addSubview:self.findBar];
 
     self.findField = [[UITextField alloc] init];
-    self.findField.placeholder = @"在代码里查找";
+    self.findField.placeholder = @"搜索关键词（黄=全部命中，橙=当前）";
     self.findField.font = [UIFont systemFontOfSize:14];
     self.findField.borderStyle = UITextBorderStyleRoundedRect;
     self.findField.clearButtonMode = UITextFieldViewModeWhileEditing;
@@ -1518,7 +1532,7 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 
         [self.findCountLabel.leadingAnchor constraintEqualToAnchor:self.findField.trailingAnchor constant:8],
         [self.findCountLabel.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
-        [self.findCountLabel.widthAnchor constraintEqualToConstant:56],
+        [self.findCountLabel.widthAnchor constraintEqualToConstant:54],
 
         [previousButton.leadingAnchor constraintEqualToAnchor:self.findCountLabel.trailingAnchor constant:4],
         [previousButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
@@ -1539,7 +1553,6 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
         [self.textView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
     ]];
 
-    // ---- 导航栏按钮
     self.saveItem = [[UIBarButtonItem alloc] initWithTitle:@"保存"
                                                     style:UIBarButtonItemStyleDone
                                                    target:self
@@ -1556,7 +1569,7 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
     [super viewWillDisappear:animated];
     if (self.dirty) {
         LogEvent(@"离开源码页，自动保存");
-        [self saveTapped];
+        [self performSave];
     }
 }
 
@@ -1568,11 +1581,33 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
         self.saveItem.enabled = YES;
         self.title = @"源代码 ●";
     }
+    // 编辑后旧的命中位置会失效：只重算计数，不上色，等用户按 ↑/↓ 再上色
+    if (!self.findBar.hidden) {
+        [self recomputeMatches];
+        self.findCountLabel.text = self.matches.count
+            ? [NSString stringWithFormat:@"-%lu", (unsigned long)self.matches.count]
+            : @"0";
+    }
 }
 
-#pragma mark 保存
+#pragma mark 保存（带二次确认）
 
 - (void)saveTapped {
+    if (!self.dirty) { return; }
+
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"保存修改？"
+                                            message:@"会直接覆盖原文件，无法撤销。"
+                                     preferredStyle:UIAlertControllerStyleAlert];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:@"保存" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [weakSelf performSave];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    PresentSafely(self, alert, @"保存确认");
+}
+
+- (void)performSave {
     NSString *path = self.file[@"path"];
     if (path.length == 0) { return; }
 
@@ -1637,17 +1672,18 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
     self.findBar.hidden = YES;
     self.findField.text = @"";
     self.matches = @[];
+    self.currentMatch = -1;
     self.findCountLabel.text = @"";
     [self.findField resignFirstResponder];
+    [self clearHighlight];
+    LogEvent(@"关闭查找，已清除高亮");
 }
 
-- (void)findTextChanged {
+- (void)recomputeMatches {
     NSString *keyword = self.findField.text ?: @"";
-    self.matches = @[];
-    self.currentMatch = -1;
-
     if (keyword.length == 0) {
-        self.findCountLabel.text = @"";
+        self.matches = @[];
+        self.currentMatch = -1;
         return;
     }
 
@@ -1664,35 +1700,93 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
         if (next >= text.length) { break; }
         searchRange = NSMakeRange(next, text.length - next);
     }
-
     self.matches = matches;
-    self.findCountLabel.text = matches.count ? [NSString stringWithFormat:@"0/%lu", (unsigned long)matches.count]
-                                             : @"0";
-    LogEvent(@"源码查找「%@」命中 %lu 处", keyword, (unsigned long)matches.count);
-    [self jumpToMatch:0];
+    if (self.currentMatch >= (NSInteger)matches.count) { self.currentMatch = (NSInteger)matches.count - 1; }
+    if (self.currentMatch < 0) { self.currentMatch = matches.count ? 0 : -1; }
+}
+
+- (void)findTextChanged {
+    [self recomputeMatches];
+    self.currentMatch = self.matches.count ? 0 : -1;
+
+    NSString *keyword = self.findField.text ?: @"";
+    if (keyword.length) {
+        LogEvent(@"源码查找「%@」命中 %lu 处", keyword, (unsigned long)self.matches.count);
+    }
+    [self highlightAndJump];
 }
 
 - (void)findNext {
     if (self.matches.count == 0) { return; }
-    [self jumpToMatch:self.currentMatch + 1];
+    [self recomputeMatches];
+    [self moveToMatch:self.currentMatch + 1];
 }
 
 - (void)findPrevious {
     if (self.matches.count == 0) { return; }
-    [self jumpToMatch:self.currentMatch - 1];
+    [self recomputeMatches];
+    [self moveToMatch:self.currentMatch - 1];
 }
 
-- (void)jumpToMatch:(NSInteger)index {
+- (void)moveToMatch:(NSInteger)index {
     NSInteger count = (NSInteger)self.matches.count;
     if (count == 0) { return; }
-    NSInteger wrapped = ((index % count) + count) % count;
-    self.currentMatch = wrapped;
+    self.currentMatch = ((index % count) + count) % count;
+    [self highlightAndJump];
+}
 
-    NSRange range = [self.matches[wrapped] rangeValue];
-    self.textView.selectedRange = range;
-    [self.textView scrollRangeToVisible:range];
+#pragma mark 高亮：黄色=全部命中，橙色=当前这一处
 
-    self.findCountLabel.text = [NSString stringWithFormat:@"%ld/%ld", (long)(wrapped + 1), (long)count];
+- (void)highlightAndJump {
+    NSString *text = self.textView.text ?: @"";
+    NSUInteger count = self.matches.count;
+
+    self.findCountLabel.text = count
+        ? [NSString stringWithFormat:@"%ld/%lu", (long)(self.currentMatch + 1), (unsigned long)count]
+        : @"0";
+
+    if (count == 0 || text.length > kHighlightLimit) {
+        return;
+    }
+
+    NSMutableAttributedString *attributed =
+        [[NSMutableAttributedString alloc] initWithString:text attributes:[self plainAttributes]];
+
+    UIColor *allColor = [UIColor colorWithRed:1.0 green:0.90 blue:0.20 alpha:0.45];
+    UIColor *currentColor = [UIColor colorWithRed:1.0 green:0.45 blue:0.0 alpha:0.60];
+
+    for (NSUInteger index = 0; index < count; index++) {
+        NSRange range = [self.matches[index] rangeValue];
+        if (NSMaxRange(range) > text.length) { continue; }
+        BOOL isCurrent = ((NSInteger)index == self.currentMatch);
+        [attributed addAttribute:NSBackgroundColorAttributeName
+                           value:(isCurrent ? currentColor : allColor)
+                           range:range];
+    }
+
+    self.applyingHighlight = YES;
+    self.textView.attributedText = attributed;
+    self.textView.typingAttributes = [self plainAttributes];
+    self.applyingHighlight = NO;
+
+    if (self.currentMatch >= 0 && self.currentMatch < (NSInteger)count) {
+        NSRange current = [self.matches[self.currentMatch] rangeValue];
+        if (NSMaxRange(current) <= text.length) {
+            // 光标放到命中词前面（length 0，避免系统蓝选中盖住橙色高亮）
+            self.textView.selectedRange = NSMakeRange(current.location, 0);
+            [self.textView scrollRangeToVisible:current];
+        }
+    }
+}
+
+- (void)clearHighlight {
+    NSString *text = self.textView.text ?: @"";
+    if (text.length == 0 || text.length > kHighlightLimit) { return; }
+    self.applyingHighlight = YES;
+    self.textView.attributedText =
+        [[NSAttributedString alloc] initWithString:text attributes:[self plainAttributes]];
+    self.textView.typingAttributes = [self plainAttributes];
+    self.applyingHighlight = NO;
 }
 
 @end
