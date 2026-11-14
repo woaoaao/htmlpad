@@ -1,0 +1,42 @@
+name: HTML
+
+options:
+  bundleIdPrefix: com.woaoaao
+  createIntermediateGroups: true
+  groupSortPosition: top
+  deploymentTarget:
+    iOS: "16.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    ENABLE_BITCODE: NO
+    CLANG_ENABLE_MODULES: YES
+
+targets:
+  HTML:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: HTML
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: HTML
+        PRODUCT_BUNDLE_IDENTIFIER: com.woaoaao.html
+        INFOPLIST_FILE: HTML/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+    scheme:
+      gatherCoverageData: false
