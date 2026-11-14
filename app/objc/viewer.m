@@ -58,6 +58,47 @@ static NSString *FormatDate(NSDate *date) {
     return [formatter stringFromDate:date ?: [NSDate date]];
 }
 
+#pragma mark - 日志
+
+static NSMutableArray<NSString *> *gLogLines = nil;
+
+static void LogEvent(NSString *format, ...) {
+    va_list args;
+    va_start(args, format);
+    NSString *text = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+
+    NSLog(@"[HTML] %@", text);
+
+    if (!gLogLines) { gLogLines = [NSMutableArray array]; }
+    [gLogLines addObject:text];
+    while (gLogLines.count > 60) { [gLogLines removeObjectAtIndex:0]; }
+}
+
+#pragma mark - 统一的弹出入口
+
+/// 从 ActionSheet 回调里同步 present 会被 UIKit 丢弃，这里延一个 runloop 再弹
+static void PresentSafely(UIViewController *presenter, UIViewController *target, NSString *debugName) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.06 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        UIViewController *top = presenter;
+        while (top.presentedViewController) {
+            top = top.presentedViewController;
+        }
+        LogEvent(@"准备弹出 %@", debugName);
+        [top presentViewController:target animated:YES completion:nil];
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.9 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            if (top.presentedViewController == target) {
+                LogEvent(@"%@ 已弹出", debugName);
+            } else {
+                LogEvent(@"%@ 弹不出来", debugName);
+            }
+        });
+    });
+}
+
 #pragma mark - 数据层
 
 @interface VStore : NSObject
