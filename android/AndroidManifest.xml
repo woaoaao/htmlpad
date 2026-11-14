@@ -4,8 +4,19 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- 尽量让兼容容器（鸿蒙卓易通等）按真实屏幕渲染，减少黑边 -->
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:resizeable="true"
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
+
     <application
         android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
