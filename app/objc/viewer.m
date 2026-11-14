@@ -100,10 +100,6 @@ static void LogEvent(NSString *format, ...) {
     }
 }
 
-static NSString *LogText(void) {
-    return gLogLines ? [gLogLines componentsJoinedByString:@"\n"] : @"(空)";
-}
-
 /// 统一的弹出入口：
 /// 从 UIMenu / UIContextualAction 的回调里同步 present 会被 UIKit 静默丢弃，
 /// 这里延到下一个 runloop，并在失败时给出可见提示，方便定位问题。
