@@ -1,0 +1,71 @@
+name: Build HTML viewer ipa (macOS)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成工程
+        working-directory: app
+        run: |
+          set -o pipefail
+          xcodegen generate --spec project.yml 2>&1 | tee build.log
+          xcodebuild -list -project HTML.xcodeproj 2>&1 | tee -a build.log
+
+      - name: 编译（不签名）
+        working-directory: app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project HTML.xcodeproj \
+            -scheme HTML \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee -a build.log
+
+      - name: 打包 ipa
+        working-directory: app
+        run: |
+          set -euo pipefail
+          rm -rf out
+          mkdir -p out/Payload
+          cp -R build/Build/Products/Release-iphoneos/HTML.app out/Payload/
+          cd out
+          zip -qry "$GITHUB_WORKSPACE/HTML-viewer-unsigned.ipa" Payload
+          ls -lh "$GITHUB_WORKSPACE/HTML-viewer-unsigned.ipa"
+
+      - name: 上传产物
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HTML-viewer-ipa
+          path: HTML-viewer-unsigned.ipa
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: 写回仓库
+        if: always()
+        run: |
+          git config user.name builder
+          git config user.email builder@example.com
+          git add -f app/build.log || true
+          if [ -f HTML-viewer-unsigned.ipa ]; then git add -f HTML-viewer-unsigned.ipa; fi
+          git commit -m "swiftui build $(date -u +%FT%TZ)" || true
+          git push || true
