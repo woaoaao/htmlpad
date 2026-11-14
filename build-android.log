@@ -24,22 +24,34 @@ build-tools=/usr/local/lib/android/sdk/build-tools/37.0.0
 === 1) aapt2 compile ===
 exit=0
 === 2) aapt2 link ===
-/home/runner/work/htmlpad/htmlpad/out-android/res.zip@values_strings.arsc.flat: error: resource string/app_name does not override an existing resource.
-/home/runner/work/htmlpad/htmlpad/out-android/res.zip@values_strings.arsc.flat: note: define an <add-resource> tag or use --auto-add-overlay.
-/home/runner/work/htmlpad/htmlpad/out-android/res.zip@values_strings.arsc.flat: error: failed to merge resource table.
-error: failed parsing overlays.
-exit=1
+exit=0
 === 3) javac ===
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/EditorActivity.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/SettingsActivity.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/Store.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/ViewerActivity.java
 /home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/MainActivity.java
-/home/runner/work/htmlpad/htmlpad/android/src/com/woaoaao/html/MainActivity.java:346: error: package R does not exist
-                icon.setImageResource(R.drawable.ic_doc);
-                                       ^
+/home/runner/work/htmlpad/htmlpad/out-android/gen/com/woaoaao/html/R.java
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
-1 error
-javac exit=1
-!!! Java 编译失败，见上方错误
+javac exit=0
+=== 4) d8 ===
+d8 exit=0
+=== 5) 把 classes.dex 放进 apk ===
+zip exit=0
+=== 6) zipalign ===
+exit=0
+=== 7) 生成签名密钥并签名 ===
+keytool exit=0
+apksigner exit=0
+=== 检查 ===
+-rw-r--r-- 1 runner runner 54153 Nov 14 05:03 /home/runner/work/htmlpad/htmlpad/AiDou.apk
+V3.0 Signer: certificate DN: CN=AiDou, OU=AiDou, O=AiDou, L=CN, ST=CN, C=CN
+V3.0 Signer: certificate SHA-256 digest: 44a78f610eac05ec33d9e9f1eba9f1314851997e89f69e4f0034fad37f892228
+V3.0 Signer: certificate SHA-1 digest: 8189850cae0463127c2cadc05bb40a4b3b9b505c
+V3.0 Signer: certificate MD5 digest: cfe9626ff4c68e05947c318b759aeba5
+apk bytes: 54153 entries: 12
+has classes.dex: True
+has AndroidManifest: True
+APK_OK
+=== 完成 ===
