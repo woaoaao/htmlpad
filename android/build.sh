@@ -1,8 +1,8 @@
-#!/bin/bash
+﻿#!/bin/bash
 # 「爱豆」Android 版：不依赖 Gradle，直接用 Android SDK 的 aapt2 / javac / d8 / zipalign / apksigner 手动打包
 set +e
 
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
 
 LOG="$ROOT/build-android.log"
