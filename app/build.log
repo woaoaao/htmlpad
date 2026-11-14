@@ -1,0 +1,257 @@
+⚙️  Generating plists...
+⚙️  Generating project...
+⚙️  Writing project...
+Created project at /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+Command line invocation:
+    /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/xcodebuild -list -project HTML.xcodeproj
+
+Information about project "HTML":
+    Targets:
+        HTML
+
+    Build Configurations:
+        Debug
+        Release
+
+    If no build configuration is specified and -scheme is not passed then "Debug" is used.
+
+    Schemes:
+        HTML
+
+Command line invocation:
+    /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/xcodebuild -project HTML.xcodeproj -scheme HTML -configuration Release -sdk iphoneos -destination generic/platform=iOS -derivedDataPath build CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = 
+    CODE_SIGNING_ALLOWED = NO
+    CODE_SIGNING_REQUIRED = NO
+    SDKROOT = iphoneos18.5
+
+note: Using codesigning identity override: 
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'HTML' in project 'HTML' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: b9502e8760eba8933c0fd5f6282494a3
+Build description path: /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/XCBuildData/b9502e8760eba8933c0fd5f6282494a3.xcbuilddata
+ClangStatCache /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -o /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
+
+CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    builtin-create-build-directory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products
+
+CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    builtin-create-build-directory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML-3b32e482c47f970e00374e27e257a1f7-VFS-iphoneos/all-product-headers.yaml
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML-3b32e482c47f970e00374e27e257a1f7-VFS-iphoneos/all-product-headers.yaml
+
+CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    builtin-create-build-directory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos
+
+CreateBuildDirectory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+    cd /Users/runner/work/htmlpad/htmlpad/app/HTML.xcodeproj
+    builtin-create-build-directory /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_const_extract_protocols.json (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftConstValuesFileList (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.LinkFileList (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-OutputFileMap.json (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.hmap (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.hmap
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyStaticMetadataFileList (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-project-headers.hmap (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-own-target-headers.hmap (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-generated-files.hmap (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-target-headers.hmap (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-non-framework-target-headers.hmap (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    write-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-non-framework-target-headers.hmap
+
+MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app
+
+MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned
+
+MkDir /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/unthinned (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /bin/mkdir -p /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/unthinned
+
+GenerateAssetSymbols /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets --compile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --output-format human-readable-text --notices --warnings --export-dependency-info /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_dependencies --output-partial-info-plist /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 16.0 --platform iphoneos --bundle-identifier com.woaoaao.html --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.document.warnings */
+/Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets:./AppIcon.appiconset/(null)[2d][icon-1024.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+/* com.apple.actool.compilation-results */
+/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols.h
+/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CompileAssetCatalogVariant thinned /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets --compile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 16.0 --platform iphoneos
+/* com.apple.actool.document.warnings */
+/Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets:./AppIcon.appiconset/(null)[2d][icon-1024.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+/* com.apple.actool.compilation-results */
+/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist_thinned
+
+
+LinkAssetCatalog /Users/runner/work/htmlpad/htmlpad/app/HTML/Assets.xcassets (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-linkAssetCatalog --thinned /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/thinned --thinned-dependencies /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist_unthinned --output /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --plist-output /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist
+
+ProcessInfoPlistFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Info.plist /Users/runner/work/htmlpad/htmlpad/app/HTML/Info.plist (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-infoPlistUtility /Users/runner/work/htmlpad/htmlpad/app/HTML/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/PkgInfo -expandbuildsettings -format binary -platform iphoneos -additionalcontentfile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/assetcatalog_generated_info.plist -requiredArchitecture arm64 -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Info.plist
+
+SwiftDriver HTML normal arm64 com.apple.xcode.tools.swift.compiler (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-SwiftDriver -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name HTML -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/htmlpad/htmlpad/app/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -F /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -c -num-threads 3 -Xcc -ivfsstatcache -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/htmlpad/htmlpad/app/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-generated-files.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-own-target-headers.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-project-headers.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-Swift.h -working-directory /Users/runner/work/htmlpad/htmlpad/app -no-emit-module-separately-wmo
+
+SwiftCompile normal arm64 Compiling\ AppEntry.swift,\ ContentView.swift,\ FileManagerModel.swift,\ HTMLPreviewView.swift,\ HomeView.swift,\ SettingsView.swift,\ SourceCodeView.swift,\ WebView.swift,\ GeneratedAssetSymbols.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/AppEntry.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/ContentView.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/FileManagerModel.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/HTMLPreviewView.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/HomeView.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/SettingsView.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/SourceCodeView.swift /Users/runner/work/htmlpad/htmlpad/app/HTML/WebView.swift /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'HTML' from project 'HTML')
+
+CompileSwift normal arm64 (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    
+
+SwiftDriver\ Compilation HTML normal arm64 com.apple.xcode.tools.swift.compiler (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-Swift-Compilation -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name HTML -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/htmlpad/htmlpad/app/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -F /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -c -num-threads 3 -Xcc -ivfsstatcache -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/htmlpad/htmlpad/app/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-generated-files.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-own-target-headers.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-project-headers.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-Swift.h -working-directory /Users/runner/work/htmlpad/htmlpad/app -no-emit-module-separately-wmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling AppEntry.swift, ContentView.swift, FileManagerModel.swift, HTMLPreviewView.swift, HomeView.swift, SettingsView.swift, SourceCodeView.swift, WebView.swift, GeneratedAssetSymbols.swift (in target 'HTML' from project 'HTML')
+
+SwiftDriver\ Compilation\ Requirements HTML normal arm64 com.apple.xcode.tools.swift.compiler (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name HTML -O -whole-module-optimization -enforce-exclusivity\=checked @/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -target arm64-apple-ios16.0 -g -module-cache-path /Users/runner/work/htmlpad/htmlpad/app/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -F /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -c -num-threads 3 -Xcc -ivfsstatcache -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache -output-file-map /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/htmlpad/htmlpad/app/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-generated-files.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-own-target-headers.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML-project-headers.hmap -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/include -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-Swift.h -working-directory /Users/runner/work/htmlpad/htmlpad/app -no-emit-module-separately-wmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/HTML-Swift.h /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-Swift.h (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML-Swift.h -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/DerivedSources/HTML-Swift.h
+
+Copy /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/arm64-apple-ios.swiftmodule /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/arm64-apple-ios.swiftmodule
+
+Copy /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/arm64-apple-ios.swiftdoc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftdoc (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftdoc /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/arm64-apple-ios.swiftdoc
+
+Copy /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/arm64-apple-ios.abi.json /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.abi.json (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.abi.json /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/arm64-apple-ios.abi.json
+
+Copy /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftsourceinfo (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftsourceinfo /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo
+
+Ld /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML normal (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -Os -L/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -L/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -F/Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -F/Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos -filelist /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.LinkFileList -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_lto.o -Xlinker -dependency_info -Xlinker /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.swiftmodule -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML
+
+ExtractAppIntentsMetadata (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name HTML --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.woaoaao.html --output /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML --dependency-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML_dependency_info.dat --stringsdata-file /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftFileList --metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/Objects-normal/arm64/HTML.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-11-14 00:11:48.251 appintentsmetadataprocessor[2302:10232] Starting appintentsmetadataprocessor export
+2026-11-14 00:11:48.256 appintentsmetadataprocessor[2302:10232] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+GenerateDSYMFile /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app.dSYM /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML -o /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app.dSYM
+
+CopySwiftLibs /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/HTML --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Frameworks --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/PlugIns --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/SystemExtensions --scan-folder /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Extensions --platform iphoneos --toolchain /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+AppIntentsSSUTraining (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Info.plist --temp-dir-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/ssu --bundle-id com.woaoaao.html --product-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app --extracted-metadata-path /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app/Metadata.appintents --metadata-file-list /Users/runner/work/htmlpad/htmlpad/app/build/Build/Intermediates.noindex/HTML.build/Release-iphoneos/HTML.build/HTML.DependencyMetadataFileList --archive-ssu-assets
+2026-11-14 00:11:48.307 appintentsnltrainingprocessor[2325:10290] Parsing options for appintentsnltrainingprocessor
+2026-11-14 00:11:48.314 appintentsnltrainingprocessor[2325:10290] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-RegisterExecutionPolicyException /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app
+
+Validate /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    builtin-validationUtility /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app (in target 'HTML' from project 'HTML')
+    cd /Users/runner/work/htmlpad/htmlpad/app
+    /usr/bin/touch -c /Users/runner/work/htmlpad/htmlpad/app/build/Build/Products/Release-iphoneos/HTML.app
+
+note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'HTML' from project 'HTML')
+** BUILD SUCCEEDED **
+
