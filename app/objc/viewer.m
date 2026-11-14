@@ -905,7 +905,6 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 
 @interface PreviewController ()
 @property (nonatomic, strong) WKWebView *webView;
-@property (nonatomic, strong) UILabel *statusLabel;
 @property (nonatomic, assign) BOOL networkAllowed;
 @property (nonatomic, assign) BOOL externalInSafari;
 @property (nonatomic, assign) NSInteger styleMode;
@@ -933,15 +932,6 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
                                                      target:self
                                                      action:@selector(closeTapped)];
 
-    self.statusLabel = [[UILabel alloc] init];
-    self.statusLabel.font = [UIFont systemFontOfSize:10];
-    self.statusLabel.textColor = [UIColor secondaryLabelColor];
-    self.statusLabel.textAlignment = NSTextAlignmentCenter;
-    self.statusLabel.text = self.file[@"path"];
-    self.statusLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
-    self.statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.view addSubview:self.statusLabel];
-
     WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
     config.allowsInlineMediaPlayback = YES;
     config.defaultWebpagePreferences.allowsContentJavaScript = PrefAllowJS();
@@ -966,11 +956,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         [self.webView.topAnchor constraintEqualToAnchor:safe.topAnchor],
         [self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.webView.bottomAnchor constraintEqualToAnchor:self.statusLabel.topAnchor],
-        [self.statusLabel.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [self.statusLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.statusLabel.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
-        [self.statusLabel.heightAnchor constraintEqualToConstant:18],
+        [self.webView.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
     ]];
 
     [self buildToolbar];
@@ -1192,9 +1178,9 @@ static NSString *const kViewportJS =
         config.backwards = NO;
         config.wraps = YES;
         [weakSelf.webView findString:keyword withConfiguration:config completionHandler:^(WKFindResult *result) {
-            weakSelf.statusLabel.text = result.matchFound
+            [weakSelf showToast:result.matchFound
                 ? [NSString stringWithFormat:@"找到：%@", keyword]
-                : [NSString stringWithFormat:@"没有找到：%@", keyword];
+                : [NSString stringWithFormat:@"没有找到：%@", keyword]];
         }];
     }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
@@ -1213,6 +1199,32 @@ static NSString *const kViewportJS =
 
 - (void)closeTapped {
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+/// 一闪而过的提示（替代原来那条常驻底栏）
+- (void)showToast:(NSString *)text {
+    UILabel *toast = [[UILabel alloc] init];
+    toast.text = text;
+    toast.font = [UIFont boldSystemFontOfSize:13];
+    toast.textColor = [UIColor whiteColor];
+    toast.backgroundColor = [UIColor colorWithWhite:0 alpha:0.75];
+    toast.textAlignment = NSTextAlignmentCenter;
+    toast.layer.cornerRadius = 10;
+    toast.clipsToBounds = YES;
+    toast.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:toast];
+    [NSLayoutConstraint activateConstraints:@[
+        [toast.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [toast.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-24],
+        [toast.widthAnchor constraintGreaterThanOrEqualToConstant:140],
+        [toast.heightAnchor constraintEqualToConstant:34],
+    ]];
+    toast.alpha = 0;
+    [UIView animateWithDuration:0.2 animations:^{ toast.alpha = 1; } completion:^(BOOL finished) {
+        [UIView animateWithDuration:0.3 delay:1.0 options:0 animations:^{ toast.alpha = 0; } completion:^(BOOL done) {
+            [toast removeFromSuperview];
+        }];
+    }];
 }
 
 #pragma mark 导航策略
