@@ -355,7 +355,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 @property (nonatomic, strong) NSDictionary *file;
 @end
 
-@interface SourceController : UIViewController <UISearchResultsUpdating>
+@interface SourceController : UIViewController
 - (instancetype)initWithFile:(NSDictionary *)file;
 @end
 
@@ -586,6 +586,11 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
                                             handler:^(UIAlertAction *action) {
         [weakSelf pickFolder];
     }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"从剪贴板新建文件"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [weakSelf createFromClipboard];
+    }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     sheet.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
     PresentSafely(self, sheet, @"添加菜单");
@@ -596,6 +601,41 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     self.emptyLabel.hidden = hasFiles;
     self.emptyButton.hidden = hasFiles;
     self.tableView.hidden = !hasFiles;
+}
+
+- (void)createFromClipboard {
+    NSString *text = [UIPasteboard generalPasteboard].string;
+    if (text.length == 0) {
+        LogEvent(@"剪贴板里没有文本");
+        UIAlertController *alert =
+            [UIAlertController alertControllerWithTitle:@"剪贴板是空的"
+                                                message:@"先把 HTML 代码复制到剪贴板再试。"
+                                         preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
+        PresentSafely(self, alert, @"剪贴板为空");
+        return;
+    }
+
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"从剪贴板新建"
+                                            message:[NSString stringWithFormat:@"共 %lu 个字符，输入文件名：", (unsigned long)text.length]
+                                     preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.text = @"粘贴的页面.html";
+        field.autocapitalizationType = UITextAutocapitalizationTypeNone;
+        field.autocorrectionType = UITextAutocorrectionTypeNo;
+    }];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:@"保存" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        NSString *name = alert.textFields.firstObject.text ?: @"粘贴的页面.html";
+        [[VStore shared] createFileNamed:name content:text];
+        [weakSelf.tableView reloadData];
+        [weakSelf refreshEmptyState];
+        LogEvent(@"已从剪贴板新建：%@", name);
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    alert.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
+    PresentSafely(self, alert, @"剪贴板新建");
 }
 
 - (void)handleRefresh:(UIRefreshControl *)refreshControl {
@@ -1039,6 +1079,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 @property (nonatomic, assign) BOOL networkAllowed;
 @property (nonatomic, assign) BOOL externalInSafari;
 @property (nonatomic, assign) NSInteger styleMode;
+@property (nonatomic, strong) NSDate *loadedModified;
 @end
 
 @implementation PreviewController
@@ -1086,6 +1127,9 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     self.webView.translatesAutoresizingMaskIntoConstraints = NO;
     self.webView.overrideUserInterfaceStyle = StyleFromMode(self.styleMode);
     [self.view addSubview:self.webView];
+
+    NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:self.file[@"path"] error:NULL];
+    self.loadedModified = attributes[NSFileModificationDate];
 
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
@@ -1143,6 +1187,17 @@ static NSString *const kViewportJS =
 
 #pragma mark 工具栏 / 菜单
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:self.file[@"path"] error:NULL];
+    NSDate *modified = attributes[NSFileModificationDate];
+    if (self.loadedModified && modified && [modified compare:self.loadedModified] == NSOrderedDescending) {
+        [self.webView reload];
+        self.loadedModified = modified;
+        LogEvent(@"源码已改动，预览已刷新");
+    }
+}
+
 - (void)buildToolbar {
     UIBarButtonItem *search = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSearch
                                                                            target:self
@@ -1168,7 +1223,7 @@ static NSString *const kViewportJS =
         [[VStore shared] toggleFavorite:weakSelf.file];
         LogEvent(favorite ? @"已取消收藏" : @"已收藏");
     }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:@"查看源代码"
+    [sheet addAction:[UIAlertAction actionWithTitle:@"编辑源代码"
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *action) {
         SourceController *controller = [[SourceController alloc] initWithFile:weakSelf.file];
@@ -1365,12 +1420,18 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 
 @end
 
-#pragma mark - 源代码
+#pragma mark - 源代码（可编辑 + 搜索）
 
-@interface SourceController ()
+@interface SourceController () <UITextViewDelegate>
 @property (nonatomic, strong) NSDictionary *file;
 @property (nonatomic, strong) UITextView *textView;
-@property (nonatomic, strong) UISearchController *searchController;
+@property (nonatomic, strong) UIView *findBar;
+@property (nonatomic, strong) UITextField *findField;
+@property (nonatomic, strong) UILabel *findCountLabel;
+@property (nonatomic, strong) UIBarButtonItem *saveItem;
+@property (nonatomic, strong) NSArray<NSValue *> *matches;
+@property (nonatomic, assign) NSInteger currentMatch;
+@property (nonatomic, assign) BOOL dirty;
 @end
 
 @implementation SourceController
@@ -1386,54 +1447,252 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
     self.view.backgroundColor = [UIColor systemBackgroundColor];
     self.title = @"源代码";
 
+    // ---- 编辑器
     self.textView = [[UITextView alloc] init];
-    self.textView.editable = NO;
-    self.textView.font = [UIFont monospacedSystemFontOfSize:12 weight:UIFontWeightRegular];
+    self.textView.delegate = self;
+    self.textView.editable = YES;
+    self.textView.font = [UIFont monospacedSystemFontOfSize:13 weight:UIFontWeightRegular];
+    self.textView.autocorrectionType = UITextAutocorrectionTypeNo;
+    self.textView.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    self.textView.spellCheckingType = UITextSpellCheckingTypeNo;
     self.textView.text = ReadTextFile(self.file[@"path"]);
+    self.textView.textContainerInset = UIEdgeInsetsMake(10, 10, 24, 10);
     self.textView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.textView];
 
+    // ---- 查找条
+    self.findBar = [[UIView alloc] init];
+    self.findBar.backgroundColor = [UIColor secondarySystemBackgroundColor];
+    self.findBar.translatesAutoresizingMaskIntoConstraints = NO;
+    self.findBar.hidden = YES;
+    [self.view addSubview:self.findBar];
+
+    self.findField = [[UITextField alloc] init];
+    self.findField.placeholder = @"在代码里查找";
+    self.findField.font = [UIFont systemFontOfSize:14];
+    self.findField.borderStyle = UITextBorderStyleRoundedRect;
+    self.findField.clearButtonMode = UITextFieldViewModeWhileEditing;
+    self.findField.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    self.findField.autocorrectionType = UITextAutocorrectionTypeNo;
+    self.findField.returnKeyType = UIReturnKeySearch;
+    [self.findField addTarget:self action:@selector(findTextChanged) forControlEvents:UIControlEventEditingChanged];
+    [self.findField addTarget:self action:@selector(findNext) forControlEvents:UIControlEventEditingDidEndOnExit];
+    self.findField.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:self.findField];
+
+    self.findCountLabel = [[UILabel alloc] init];
+    self.findCountLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular];
+    self.findCountLabel.textColor = [UIColor secondaryLabelColor];
+    self.findCountLabel.textAlignment = NSTextAlignmentCenter;
+    self.findCountLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:self.findCountLabel];
+
+    UIButton *previousButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [previousButton setImage:[UIImage systemImageNamed:@"chevron.up"] forState:UIControlStateNormal];
+    [previousButton addTarget:self action:@selector(findPrevious) forControlEvents:UIControlEventTouchUpInside];
+    previousButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:previousButton];
+
+    UIButton *nextButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [nextButton setImage:[UIImage systemImageNamed:@"chevron.down"] forState:UIControlStateNormal];
+    [nextButton addTarget:self action:@selector(findNext) forControlEvents:UIControlEventTouchUpInside];
+    nextButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:nextButton];
+
+    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [closeButton setImage:[UIImage systemImageNamed:@"xmark.circle.fill"] forState:UIControlStateNormal];
+    [closeButton addTarget:self action:@selector(hideFindBar) forControlEvents:UIControlEventTouchUpInside];
+    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:closeButton];
+
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
-        [self.textView.topAnchor constraintEqualToAnchor:safe.topAnchor],
+        [self.findBar.topAnchor constraintEqualToAnchor:safe.topAnchor],
+        [self.findBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.findBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.findBar.heightAnchor constraintEqualToConstant:48],
+
+        [self.findField.leadingAnchor constraintEqualToAnchor:self.findBar.leadingAnchor constant:12],
+        [self.findField.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
+        [self.findField.heightAnchor constraintEqualToConstant:32],
+
+        [self.findCountLabel.leadingAnchor constraintEqualToAnchor:self.findField.trailingAnchor constant:8],
+        [self.findCountLabel.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
+        [self.findCountLabel.widthAnchor constraintEqualToConstant:56],
+
+        [previousButton.leadingAnchor constraintEqualToAnchor:self.findCountLabel.trailingAnchor constant:4],
+        [previousButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
+        [previousButton.widthAnchor constraintEqualToConstant:30],
+
+        [nextButton.leadingAnchor constraintEqualToAnchor:previousButton.trailingAnchor constant:4],
+        [nextButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
+        [nextButton.widthAnchor constraintEqualToConstant:30],
+
+        [closeButton.leadingAnchor constraintEqualToAnchor:nextButton.trailingAnchor constant:6],
+        [closeButton.trailingAnchor constraintEqualToAnchor:self.findBar.trailingAnchor constant:-10],
+        [closeButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
+        [closeButton.widthAnchor constraintEqualToConstant:28],
+
+        [self.textView.topAnchor constraintEqualToAnchor:self.findBar.bottomAnchor],
         [self.textView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.textView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         [self.textView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
     ]];
 
-    self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
-    self.searchController.searchResultsUpdater = self;
-    self.searchController.obscuresBackgroundDuringPresentation = NO;
-    self.searchController.searchBar.placeholder = @"搜索代码";
-    self.navigationItem.searchController = self.searchController;
-    self.navigationItem.hidesSearchBarWhenScrolling = NO;
-    self.definesPresentationContext = YES;
-
-    self.navigationItem.rightBarButtonItem =
-        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction
-                                                     target:self
-                                                     action:@selector(shareTapped)];
+    // ---- 导航栏按钮
+    self.saveItem = [[UIBarButtonItem alloc] initWithTitle:@"保存"
+                                                    style:UIBarButtonItemStyleDone
+                                                   target:self
+                                                   action:@selector(saveTapped)];
+    self.saveItem.enabled = NO;
+    UIBarButtonItem *findItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"magnifyingglass"]
+                                                                style:UIBarButtonItemStylePlain
+                                                               target:self
+                                                               action:@selector(showFindBar)];
+    self.navigationItem.rightBarButtonItems = @[self.saveItem, findItem];
 }
 
-- (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
-    NSString *keyword = searchController.searchBar.text ?: @"";
-    if (keyword.length == 0) { return; }
-    NSString *text = self.textView.text ?: @"";
-    NSRange range = [text rangeOfString:keyword options:NSCaseInsensitiveSearch];
-    if (range.location != NSNotFound) {
-        self.textView.selectedRange = range;
-        [self.textView scrollRangeToVisible:range];
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    if (self.dirty) {
+        LogEvent(@"离开源码页，自动保存");
+        [self saveTapped];
     }
 }
 
-- (void)shareTapped {
+#pragma mark 编辑
+
+- (void)textViewDidChange:(UITextView *)textView {
+    if (!self.dirty) {
+        self.dirty = YES;
+        self.saveItem.enabled = YES;
+        self.title = @"源代码 ●";
+    }
+}
+
+#pragma mark 保存
+
+- (void)saveTapped {
     NSString *path = self.file[@"path"];
     if (path.length == 0) { return; }
-    UIActivityViewController *activity =
-        [[UIActivityViewController alloc] initWithActivityItems:@[[NSURL fileURLWithPath:path]]
-                                          applicationActivities:nil];
-    activity.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
-    PresentSafely(self, activity, @"分享面板");
+
+    NSError *error = nil;
+    BOOL ok = [self.textView.text writeToFile:path
+                                   atomically:YES
+                                     encoding:NSUTF8StringEncoding
+                                        error:&error];
+    if (ok) {
+        self.dirty = NO;
+        self.saveItem.enabled = NO;
+        self.title = @"源代码";
+        LogEvent(@"源码已保存：%@（%lu 字符）",
+                 path.lastPathComponent, (unsigned long)self.textView.text.length);
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"HTMLPadFilesChanged" object:nil];
+        [self showToast:@"已保存"];
+    } else {
+        LogEvent(@"源码保存失败：%@", error.localizedDescription ?: @"未知");
+        UIAlertController *alert =
+            [UIAlertController alertControllerWithTitle:@"保存失败"
+                                                message:error.localizedDescription ?: @"未知错误"
+                                         preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
+        PresentSafely(self, alert, @"保存失败提示");
+    }
+}
+
+- (void)showToast:(NSString *)text {
+    UILabel *toast = [[UILabel alloc] init];
+    toast.text = text;
+    toast.font = [UIFont boldSystemFontOfSize:14];
+    toast.textColor = [UIColor whiteColor];
+    toast.backgroundColor = [UIColor colorWithWhite:0 alpha:0.75];
+    toast.textAlignment = NSTextAlignmentCenter;
+    toast.layer.cornerRadius = 10;
+    toast.clipsToBounds = YES;
+    toast.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:toast];
+    [NSLayoutConstraint activateConstraints:@[
+        [toast.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [toast.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-30],
+        [toast.widthAnchor constraintEqualToConstant:120],
+        [toast.heightAnchor constraintEqualToConstant:36],
+    ]];
+    toast.alpha = 0;
+    [UIView animateWithDuration:0.2 animations:^{ toast.alpha = 1; } completion:^(BOOL finished) {
+        [UIView animateWithDuration:0.3 delay:0.9 options:0 animations:^{ toast.alpha = 0; } completion:^(BOOL done) {
+            [toast removeFromSuperview];
+        }];
+    }];
+}
+
+#pragma mark 查找
+
+- (void)showFindBar {
+    self.findBar.hidden = NO;
+    [self.findField becomeFirstResponder];
+    [self findTextChanged];
+}
+
+- (void)hideFindBar {
+    self.findBar.hidden = YES;
+    self.findField.text = @"";
+    self.matches = @[];
+    self.findCountLabel.text = @"";
+    [self.findField resignFirstResponder];
+}
+
+- (void)findTextChanged {
+    NSString *keyword = self.findField.text ?: @"";
+    self.matches = @[];
+    self.currentMatch = -1;
+
+    if (keyword.length == 0) {
+        self.findCountLabel.text = @"";
+        return;
+    }
+
+    NSString *text = self.textView.text ?: @"";
+    NSMutableArray<NSValue *> *matches = [NSMutableArray array];
+    NSRange searchRange = NSMakeRange(0, text.length);
+    while (searchRange.location < text.length) {
+        NSRange found = [text rangeOfString:keyword
+                                    options:NSCaseInsensitiveSearch
+                                      range:searchRange];
+        if (found.location == NSNotFound) { break; }
+        [matches addObject:[NSValue valueWithRange:found]];
+        NSUInteger next = NSMaxRange(found);
+        if (next >= text.length) { break; }
+        searchRange = NSMakeRange(next, text.length - next);
+    }
+
+    self.matches = matches;
+    self.findCountLabel.text = matches.count ? [NSString stringWithFormat:@"0/%lu", (unsigned long)matches.count]
+                                             : @"0";
+    LogEvent(@"源码查找「%@」命中 %lu 处", keyword, (unsigned long)matches.count);
+    [self jumpToMatch:0];
+}
+
+- (void)findNext {
+    if (self.matches.count == 0) { return; }
+    [self jumpToMatch:self.currentMatch + 1];
+}
+
+- (void)findPrevious {
+    if (self.matches.count == 0) { return; }
+    [self jumpToMatch:self.currentMatch - 1];
+}
+
+- (void)jumpToMatch:(NSInteger)index {
+    NSInteger count = (NSInteger)self.matches.count;
+    if (count == 0) { return; }
+    NSInteger wrapped = ((index % count) + count) % count;
+    self.currentMatch = wrapped;
+
+    NSRange range = [self.matches[wrapped] rangeValue];
+    self.textView.selectedRange = range;
+    [self.textView scrollRangeToVisible:range];
+
+    self.findCountLabel.text = [NSString stringWithFormat:@"%ld/%ld", (long)(wrapped + 1), (long)count];
 }
 
 @end
