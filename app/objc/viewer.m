@@ -119,7 +119,9 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.9 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
-            if (top.presentedViewController != target) {
+            if (top.presentedViewController == target) {
+                LogEvent(@"%@ 已弹出", debugName);
+            } else {
                 LogEvent(@"%@ 弹不出来", debugName);
                 UIAlertController *alert =
                     [UIAlertController alertControllerWithTitle:@"无法打开"
@@ -222,12 +224,68 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 }
 
 - (BOOL)importFromURL:(NSURL *)url {
-    BOOL scoped = [url startAccessingSecurityScopedResource];
+    if (!url) { return NO; }
+
     NSString *name = url.lastPathComponent.length ? url.lastPathComponent : @"导入文件";
+    LogEvent(@"开始导入 %@", name);
+
+    BOOL scoped = [url startAccessingSecurityScopedResource];
+    LogEvent(@"安全作用域=%@", scoped ? @"是" : @"否");
+
+    NSFileManager *manager = [NSFileManager defaultManager];
     NSString *target = [self uniquePathForName:name];
-    BOOL ok = [[NSFileManager defaultManager] copyItemAtPath:url.path toPath:target error:NULL];
+    BOOL isDirectory = NO;
+    [manager fileExistsAtPath:url.path isDirectory:&isDirectory];
+
+    NSError *copyError = nil;
+    BOOL ok = [manager copyItemAtPath:url.path toPath:target error:&copyError];
+    if (ok) {
+        LogEvent(@"直接拷贝成功");
+    } else {
+        LogEvent(@"直接拷贝失败：%@", copyError.localizedDescription ?: @"未知");
+
+        if (!isDirectory) {
+            // 兜底：用 NSFileCoordinator 协调读取（iCloud 文件没下载也能读），再自己写
+            __block NSData *data = nil;
+            __block NSError *readError = nil;
+            NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
+            NSError *coordinationError = nil;
+            [coordinator coordinateReadingItemAtURL:url
+                                            options:NSFileCoordinatorReadingWithoutChanges
+                                              error:&coordinationError
+                                         byAccessor:^(NSURL *newURL) {
+                data = [NSData dataWithContentsOfURL:newURL options:0 error:&readError];
+            }];
+
+            if (data.length > 0) {
+                ok = [data writeToFile:target atomically:YES];
+                LogEvent(ok ? @"协调读取后写入成功（%lu 字节）" : @"协调读取成功但写入失败",
+                         (unsigned long)data.length);
+            } else {
+                LogEvent(@"协调读取失败：%@ %@",
+                         coordinationError.localizedDescription ?: @"-",
+                         readError.localizedDescription ?: @"-");
+
+                // 第二层兜底：直接读数据
+                NSData *raw = [NSData dataWithContentsOfURL:url options:0 error:NULL];
+                if (raw.length > 0) {
+                    ok = [raw writeToFile:target atomically:YES];
+                    LogEvent(ok ? @"直接读取后写入成功" : @"直接读取后写入失败");
+                } else {
+                    LogEvent(@"直接读取也失败");
+                }
+            }
+        }
+    }
+
     if (scoped) { [url stopAccessingSecurityScopedResource]; }
-    if (ok) { [self reload]; }
+
+    if (ok) {
+        [self reload];
+        LogEvent(@"导入成功：%@（列表共 %lu 个文件）", target.lastPathComponent, (unsigned long)self.files.count);
+    } else {
+        LogEvent(@"导入最终失败");
+    }
     return ok;
 }
 
@@ -669,6 +727,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    LogEvent(@"选中了 %lu 个文件", (unsigned long)urls.count);
     BOOL anyFailure = NO;
     for (NSURL *url in urls) {
         if (![[VStore shared] importFromURL:url]) { anyFailure = YES; }
@@ -676,12 +735,17 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     [self.tableView reloadData];
     [self refreshEmptyState];
     if (anyFailure) {
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"导入失败"
-                                                                      message:@"可能是文件权限受限，试试先拷贝到「文件」App 再导入。"
-                                                               preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertController *alert =
+            [UIAlertController alertControllerWithTitle:@"导入失败"
+                                                message:@"这个文件没法拷贝进 App。可以先在「文件」App 里把它拷贝到「我的 iPhone」，再导入一次。"
+                                         preferredStyle:UIAlertControllerStyleAlert];
         [alert addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:alert animated:YES completion:nil];
+        PresentSafely(self, alert, @"导入失败提示");
     }
+}
+
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
+    LogEvent(@"选择器被取消");
 }
 
 - (void)presentPaste {
