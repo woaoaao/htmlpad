@@ -1007,9 +1007,32 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
 }
 
 static NSString *const kViewportJS =
-    @"(function(){function f(){if(!document.head){return;}if(!document.querySelector('meta[name=\"viewport\"]')){var m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m);}}"
-     "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',f);}else{f();}"
-     "document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[target=\"_blank\"]'):null;if(a){a.target='_self';}},true);})();";
+    @"(function(){"
+     "function ready(fn){if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',fn);}else{fn();}}"
+     "function ensureViewport(){if(!document.head){return;}"
+     "var m=document.querySelector('meta[name=\"viewport\"]');"
+     "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}"
+     "if(m.content.indexOf('viewport-fit')<0){m.content='width=device-width,initial-scale=1,viewport-fit=cover';}}"
+     "function measure(kind){var p=document.createElement('div');"
+     "p.style.cssText='position:fixed;left:0;top:0;width:1px;height:0;visibility:hidden;pointer-events:none;';"
+     "p.style.height='env(safe-area-inset-'+kind+', 0px)';document.body.appendChild(p);"
+     "var v=p.getBoundingClientRect().height;p.remove();return v;}"
+     "function applySafeArea(){if(!document.body){return;}"
+     "if(!window.__htmlpadSafe){var cs0=getComputedStyle(document.body);"
+     "window.__htmlpadSafe={pt:parseFloat(cs0.paddingTop)||0,pb:parseFloat(cs0.paddingBottom)||0};}"
+     "var base=window.__htmlpadSafe;"
+     "var top=measure('top'),bottom=measure('bottom');var css='';"
+     "if(top>0.5){css+='body{padding-top:'+(base.pt+top)+'px !important;}';}"
+     "if(bottom>0.5){css+='body{padding-bottom:'+(base.pb+bottom)+'px !important;}';}"
+     "var old=document.getElementById('htmlpad-safe-area');if(old){old.remove();}"
+     "if(css){var st=document.createElement('style');st.id='htmlpad-safe-area';st.textContent=css;"
+     "if(document.head){document.head.appendChild(st);}}}"
+     "ready(function(){ensureViewport();applySafeArea();"
+     "window.addEventListener('resize',applySafeArea);"
+     "window.addEventListener('orientationchange',function(){setTimeout(applySafeArea,300);});});"
+     "document.addEventListener('click',function(e){"
+     "var a=e.target&&e.target.closest?e.target.closest('a[target=\"_blank\"]'):null;"
+     "if(a){a.target='_self';}},true);})();";
 
 + (WKUserScript *)viewportScript {
     return [[WKUserScript alloc] initWithSource:kViewportJS
@@ -1042,16 +1065,6 @@ static NSString *const kViewportJS =
             [weakSelf.webView reload];
         });
     }];
-}
-
-#pragma mark 全屏适配
-
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-    // 网页铺满整屏（含 Home 指示条区域），内容用内边距避让，底部就不再露白
-    CGFloat bottomInset = self.view.safeAreaInsets.bottom;
-    self.webView.scrollView.contentInset = UIEdgeInsetsMake(0, 0, bottomInset, 0);
-    self.webView.scrollView.scrollIndicatorInsets = UIEdgeInsetsMake(0, 0, bottomInset, 0);
 }
 
 #pragma mark 工具栏 / 菜单
