@@ -382,6 +382,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 @property (nonatomic, strong) UISearchController *searchController;
 @property (nonatomic, copy) NSString *keyword;
 @property (nonatomic, strong) UILabel *logLabel;
+@property (nonatomic, strong) UIButton *emptyButton;
 @end
 
 @implementation FilesController
@@ -423,6 +424,24 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 
     [self buildAddMenu];
 
+    self.emptyButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.emptyButton setTitle:@"导入 HTML 文件" forState:UIControlStateNormal];
+    self.emptyButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+    [self.emptyButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.emptyButton.backgroundColor = [UIColor systemBlueColor];
+    self.emptyButton.layer.cornerRadius = 12.0;
+    self.emptyButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.emptyButton addTarget:self
+                         action:@selector(showAddSheet)
+               forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:self.emptyButton];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.emptyButton.topAnchor constraintEqualToAnchor:self.emptyLabel.bottomAnchor constant:18],
+        [self.emptyButton.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [self.emptyButton.widthAnchor constraintEqualToConstant:220],
+        [self.emptyButton.heightAnchor constraintEqualToConstant:46],
+    ]];
+
     self.logLabel = [[UILabel alloc] init];
     self.logLabel.font = [UIFont systemFontOfSize:10];
     self.logLabel.textColor = [UIColor secondaryLabelColor];
@@ -442,6 +461,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
         [self.logLabel.heightAnchor constraintEqualToConstant:30],
     ]];
     gLogLabel = self.logLabel;
+    self.tableView.contentInset = UIEdgeInsetsMake(0, 0, 44, 0);
 
     self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchController.searchResultsUpdater = self;
@@ -510,6 +530,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 - (void)refreshEmptyState {
     BOOL hasFiles = [VStore shared].files.count > 0;
     self.emptyLabel.hidden = hasFiles;
+    self.emptyButton.hidden = hasFiles;
     self.tableView.hidden = !hasFiles;
 }
 
