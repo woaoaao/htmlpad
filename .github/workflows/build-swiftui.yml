@@ -48,15 +48,15 @@ jobs:
           mkdir -p out/Payload
           cp -R build/Build/Products/Release-iphoneos/HTML.app out/Payload/
           cd out
-          zip -qry "$GITHUB_WORKSPACE/HTML-viewer-unsigned.ipa" Payload
-          ls -lh "$GITHUB_WORKSPACE/HTML-viewer-unsigned.ipa"
+          zip -qry "$GITHUB_WORKSPACE/HTML-swiftui-unsigned.ipa" Payload
+          ls -lh "$GITHUB_WORKSPACE/HTML-swiftui-unsigned.ipa"
 
       - name: 上传产物
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: HTML-viewer-ipa
-          path: HTML-viewer-unsigned.ipa
+          path: HTML-swiftui-unsigned.ipa
           if-no-files-found: warn
           retention-days: 30
 
@@ -66,6 +66,6 @@ jobs:
           git config user.name builder
           git config user.email builder@example.com
           git add -f app/build.log || true
-          if [ -f HTML-viewer-unsigned.ipa ]; then git add -f HTML-viewer-unsigned.ipa; fi
+          if [ -f HTML-swiftui-unsigned.ipa ]; then git add -f HTML-swiftui-unsigned.ipa; fi
           git commit -m "swiftui build $(date -u +%FT%TZ)" || true
           git push || true
