@@ -1349,28 +1349,43 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 
 @end
 
-#pragma mark - 源代码（可编辑 + 搜索 + 高亮）
+#pragma mark - 源代码（可编辑 + 查找替换 + 撤销 + 高亮）
 
 @interface SourceController () <UITextViewDelegate>
 @property (nonatomic, strong) NSDictionary *file;
 @property (nonatomic, strong) UITextView *textView;
+
 @property (nonatomic, strong) UIView *findBar;
 @property (nonatomic, strong) UITextField *findField;
+@property (nonatomic, strong) UITextField *replaceField;
 @property (nonatomic, strong) UILabel *findCountLabel;
+
 @property (nonatomic, strong) UIBarButtonItem *saveItem;
+@property (nonatomic, strong) UIBarButtonItem *undoItem;
+@property (nonatomic, strong) UIBarButtonItem *redoItem;
+
 @property (nonatomic, strong) NSArray<NSValue *> *matches;
 @property (nonatomic, assign) NSInteger currentMatch;
 @property (nonatomic, assign) BOOL dirty;
-@property (nonatomic, assign) BOOL applyingHighlight;
+
+@property (nonatomic, strong) NSMutableArray<NSString *> *undoStack;
+@property (nonatomic, strong) NSMutableArray<NSString *> *redoStack;
+@property (nonatomic, copy) NSString *lastText;
+@property (nonatomic, assign) NSInteger snapshotGeneration;
 @end
 
 @implementation SourceController
 
 static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避免卡顿
+static const NSInteger kUndoLimit = 30;
 
 - (instancetype)initWithFile:(NSDictionary *)file {
     self = [super initWithNibName:nil bundle:nil];
-    if (self) { _file = file; }
+    if (self) {
+        _file = file;
+        _undoStack = [NSMutableArray array];
+        _redoStack = [NSMutableArray array];
+    }
     return self;
 }
 
@@ -1390,6 +1405,26 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
     self.view.backgroundColor = [UIColor systemBackgroundColor];
     self.title = @"源代码";
 
+    [self buildTextView];
+    [self buildFindBar];
+    [self buildToolbar];
+    [self buildNavigationItems];
+
+    self.lastText = self.textView.text ?: @"";
+    [self updateUndoButtons];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    if (self.dirty) {
+        LogEvent(@"离开源码页，自动保存");
+        [self performSave];
+    }
+}
+
+#pragma mark 视图搭建
+
+- (void)buildTextView {
     self.textView = [[UITextView alloc] init];
     self.textView.delegate = self;
     self.textView.editable = YES;
@@ -1402,16 +1437,18 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
     self.textView.textContainerInset = UIEdgeInsetsMake(10, 10, 28, 10);
     self.textView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.textView];
+}
 
-    // 查找条
+- (void)buildFindBar {
     self.findBar = [[UIView alloc] init];
     self.findBar.backgroundColor = [UIColor secondarySystemBackgroundColor];
     self.findBar.translatesAutoresizingMaskIntoConstraints = NO;
     self.findBar.hidden = YES;
     [self.view addSubview:self.findBar];
 
+    // 第一行：查找
     self.findField = [[UITextField alloc] init];
-    self.findField.placeholder = @"搜索关键词（黄=全部命中，橙=当前）";
+    self.findField.placeholder = @"搜索（黄=全部，橙=当前）";
     self.findField.font = [UIFont systemFontOfSize:14];
     self.findField.borderStyle = UITextBorderStyleRoundedRect;
     self.findField.clearButtonMode = UITextFieldViewModeWhileEditing;
@@ -1430,87 +1467,147 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
     self.findCountLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.findBar addSubview:self.findCountLabel];
 
-    UIButton *previousButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [previousButton setImage:[UIImage systemImageNamed:@"chevron.up"] forState:UIControlStateNormal];
-    [previousButton addTarget:self action:@selector(findPrevious) forControlEvents:UIControlEventTouchUpInside];
-    previousButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.findBar addSubview:previousButton];
+    UIButton *previousButton = [self iconButton:@"chevron.up" action:@selector(findPrevious)];
+    UIButton *nextButton = [self iconButton:@"chevron.down" action:@selector(findNext)];
+    UIButton *closeButton = [self iconButton:@"xmark.circle.fill" action:@selector(hideFindBar)];
 
-    UIButton *nextButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [nextButton setImage:[UIImage systemImageNamed:@"chevron.down"] forState:UIControlStateNormal];
-    [nextButton addTarget:self action:@selector(findNext) forControlEvents:UIControlEventTouchUpInside];
-    nextButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.findBar addSubview:nextButton];
+    // 第二行：替换
+    self.replaceField = [[UITextField alloc] init];
+    self.replaceField.placeholder = @"替换为…";
+    self.replaceField.font = [UIFont systemFontOfSize:14];
+    self.replaceField.borderStyle = UITextBorderStyleRoundedRect;
+    self.replaceField.clearButtonMode = UITextFieldViewModeWhileEditing;
+    self.replaceField.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    self.replaceField.autocorrectionType = UITextAutocorrectionTypeNo;
+    self.replaceField.returnKeyType = UIReturnKeyDone;
+    self.replaceField.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:self.replaceField];
 
-    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [closeButton setImage:[UIImage systemImageNamed:@"xmark.circle.fill"] forState:UIControlStateNormal];
-    [closeButton addTarget:self action:@selector(hideFindBar) forControlEvents:UIControlEventTouchUpInside];
-    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.findBar addSubview:closeButton];
+    UIButton *replaceButton = [self textButton:@"替换" action:@selector(replaceCurrent)];
+    UIButton *replaceAllButton = [self textButton:@"全部" action:@selector(replaceAll)];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.findBar.heightAnchor constraintEqualToConstant:94],
+
+        [self.findField.leadingAnchor constraintEqualToAnchor:self.findBar.leadingAnchor constant:12],
+        [self.findField.topAnchor constraintEqualToAnchor:self.findBar.topAnchor constant:8],
+        [self.findField.heightAnchor constraintEqualToConstant:32],
+
+        [self.findCountLabel.leadingAnchor constraintEqualToAnchor:self.findField.trailingAnchor constant:8],
+        [self.findCountLabel.centerYAnchor constraintEqualToAnchor:self.findField.centerYAnchor],
+        [self.findCountLabel.widthAnchor constraintEqualToConstant:52],
+
+        [previousButton.leadingAnchor constraintEqualToAnchor:self.findCountLabel.trailingAnchor constant:4],
+        [previousButton.centerYAnchor constraintEqualToAnchor:self.findField.centerYAnchor],
+        [previousButton.widthAnchor constraintEqualToConstant:28],
+
+        [nextButton.leadingAnchor constraintEqualToAnchor:previousButton.trailingAnchor constant:2],
+        [nextButton.centerYAnchor constraintEqualToAnchor:self.findField.centerYAnchor],
+        [nextButton.widthAnchor constraintEqualToConstant:28],
+
+        [closeButton.leadingAnchor constraintEqualToAnchor:nextButton.trailingAnchor constant:4],
+        [closeButton.trailingAnchor constraintEqualToAnchor:self.findBar.trailingAnchor constant:-10],
+        [closeButton.centerYAnchor constraintEqualToAnchor:self.findField.centerYAnchor],
+        [closeButton.widthAnchor constraintEqualToConstant:26],
+
+        [self.replaceField.leadingAnchor constraintEqualToAnchor:self.findBar.leadingAnchor constant:12],
+        [self.replaceField.topAnchor constraintEqualToAnchor:self.findField.bottomAnchor constant:8],
+        [self.replaceField.heightAnchor constraintEqualToConstant:32],
+
+        [replaceButton.leadingAnchor constraintEqualToAnchor:self.replaceField.trailingAnchor constant:8],
+        [replaceButton.centerYAnchor constraintEqualToAnchor:self.replaceField.centerYAnchor],
+        [replaceButton.widthAnchor constraintEqualToConstant:56],
+
+        [replaceAllButton.leadingAnchor constraintEqualToAnchor:replaceButton.trailingAnchor constant:6],
+        [replaceAllButton.trailingAnchor constraintEqualToAnchor:self.findBar.trailingAnchor constant:-10],
+        [replaceAllButton.centerYAnchor constraintEqualToAnchor:self.replaceField.centerYAnchor],
+        [replaceAllButton.widthAnchor constraintEqualToConstant:56],
+    ]];
+}
+
+- (UIButton *)iconButton:(NSString *)symbol action:(SEL)action {
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+    [button setImage:[UIImage systemImageNamed:symbol] forState:UIControlStateNormal];
+    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:button];
+    return button;
+}
+
+- (UIButton *)textButton:(NSString *)title action:(SEL)action {
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+    [button setTitle:title forState:UIControlStateNormal];
+    button.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    button.backgroundColor = [UIColor systemBlueColor];
+    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    button.layer.cornerRadius = 7;
+    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.findBar addSubview:button];
+    return button;
+}
+
+- (void)buildToolbar {
+    UIToolbar *toolbar = [[UIToolbar alloc] init];
+    toolbar.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:toolbar];
+
+    self.undoItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"arrow.uturn.backward"]
+                                                    style:UIBarButtonItemStylePlain
+                                                   target:self
+                                                   action:@selector(undoTapped)];
+    self.redoItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"arrow.uturn.forward"]
+                                                    style:UIBarButtonItemStylePlain
+                                                   target:self
+                                                   action:@selector(redoTapped)];
+    UIBarButtonItem *flexible = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                                              target:nil action:nil];
+    UIBarButtonItem *findItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"magnifyingglass"]
+                                                                 style:UIBarButtonItemStylePlain
+                                                                target:self
+                                                                action:@selector(showFindBar)];
+    UIBarButtonItem *doneItem = [[UIBarButtonItem alloc] initWithTitle:@"收起键盘"
+                                                                 style:UIBarButtonItemStylePlain
+                                                                target:self
+                                                                action:@selector(dismissKeyboard)];
+    toolbar.items = @[self.undoItem, self.redoItem, flexible, findItem, doneItem];
 
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
         [self.findBar.topAnchor constraintEqualToAnchor:safe.topAnchor],
         [self.findBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.findBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.findBar.heightAnchor constraintEqualToConstant:48],
-
-        [self.findField.leadingAnchor constraintEqualToAnchor:self.findBar.leadingAnchor constant:12],
-        [self.findField.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
-        [self.findField.heightAnchor constraintEqualToConstant:32],
-
-        [self.findCountLabel.leadingAnchor constraintEqualToAnchor:self.findField.trailingAnchor constant:8],
-        [self.findCountLabel.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
-        [self.findCountLabel.widthAnchor constraintEqualToConstant:54],
-
-        [previousButton.leadingAnchor constraintEqualToAnchor:self.findCountLabel.trailingAnchor constant:4],
-        [previousButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
-        [previousButton.widthAnchor constraintEqualToConstant:30],
-
-        [nextButton.leadingAnchor constraintEqualToAnchor:previousButton.trailingAnchor constant:4],
-        [nextButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
-        [nextButton.widthAnchor constraintEqualToConstant:30],
-
-        [closeButton.leadingAnchor constraintEqualToAnchor:nextButton.trailingAnchor constant:6],
-        [closeButton.trailingAnchor constraintEqualToAnchor:self.findBar.trailingAnchor constant:-10],
-        [closeButton.centerYAnchor constraintEqualToAnchor:self.findBar.centerYAnchor],
-        [closeButton.widthAnchor constraintEqualToConstant:28],
 
         [self.textView.topAnchor constraintEqualToAnchor:self.findBar.bottomAnchor],
         [self.textView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.textView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.textView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-    ]];
+        [self.textView.bottomAnchor constraintEqualToAnchor:toolbar.topAnchor],
 
+        [toolbar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [toolbar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [toolbar.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
+    ]];
+}
+
+- (void)buildNavigationItems {
     self.saveItem = [[UIBarButtonItem alloc] initWithTitle:@"保存"
                                                     style:UIBarButtonItemStyleDone
                                                    target:self
                                                    action:@selector(saveTapped)];
     self.saveItem.enabled = NO;
-    UIBarButtonItem *findItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"magnifyingglass"]
-                                                                style:UIBarButtonItemStylePlain
-                                                               target:self
-                                                               action:@selector(showFindBar)];
-    self.navigationItem.rightBarButtonItems = @[self.saveItem, findItem];
+    self.navigationItem.rightBarButtonItem = self.saveItem;
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    if (self.dirty) {
-        LogEvent(@"离开源码页，自动保存");
-        [self performSave];
-    }
+- (void)dismissKeyboard {
+    [self.view endEditing:YES];
 }
 
-#pragma mark 编辑
+#pragma mark 编辑 / 撤销
 
 - (void)textViewDidChange:(UITextView *)textView {
-    if (!self.dirty) {
-        self.dirty = YES;
-        self.saveItem.enabled = YES;
-        self.title = @"源代码 ●";
-    }
-    // 编辑后旧的命中位置会失效：只重算计数，不上色，等用户按 ↑/↓ 再上色
+    [self markDirty];
+    [self scheduleSnapshot];
+
     if (!self.findBar.hidden) {
         [self recomputeMatches];
         self.findCountLabel.text = self.matches.count
@@ -1519,7 +1616,90 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
     }
 }
 
-#pragma mark 保存（带二次确认）
+- (void)markDirty {
+    if (self.dirty) { return; }
+    self.dirty = YES;
+    self.saveItem.enabled = YES;
+    self.title = @"源代码 ●";
+}
+
+- (void)scheduleSnapshot {
+    self.snapshotGeneration += 1;
+    NSInteger generation = self.snapshotGeneration;
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.7 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        SourceController *controller = weakSelf;
+        if (!controller) { return; }
+        if (generation != controller.snapshotGeneration) { return; }   // 期间又改了
+
+        NSString *current = controller.textView.text ?: @"";
+        [controller pushUndoSnapshot:controller.lastText];
+        controller.lastText = current;
+    });
+}
+
+- (void)pushUndoSnapshot:(NSString *)text {
+    if (text == nil) { return; }
+    if (self.undoStack.count > 0 && [[self.undoStack lastObject] isEqualToString:text]) { return; }
+    [self.undoStack addObject:text];
+    while ((NSInteger)self.undoStack.count > kUndoLimit) {
+        [self.undoStack removeObjectAtIndex:0];
+    }
+    [self.redoStack removeAllObjects];
+    [self updateUndoButtons];
+}
+
+- (void)rememberBeforeChange {
+    self.snapshotGeneration += 1;                 // 取消待定快照
+    [self pushUndoSnapshot:self.textView.text ?: @""];
+}
+
+- (void)applyNewText:(NSString *)text {
+    self.textView.text = text;
+    self.textView.typingAttributes = [self plainAttributes];
+    self.lastText = text;
+    self.snapshotGeneration += 1;
+    [self markDirty];
+    if (!self.findBar.hidden) {
+        [self recomputeMatches];
+        [self highlightAndJump];
+    }
+    [self updateUndoButtons];
+}
+
+- (void)undoTapped {
+    if (self.undoStack.count == 0) {
+        LogEvent(@"没有可撤销的步骤");
+        return;
+    }
+    NSString *target = [self.undoStack lastObject];
+    [self.undoStack removeLastObject];
+    [self.redoStack addObject:self.textView.text ?: @""];
+
+    [self applyNewText:target];
+    LogEvent(@"已撤销一步（剩余 %lu）", (unsigned long)self.undoStack.count);
+}
+
+- (void)redoTapped {
+    if (self.redoStack.count == 0) {
+        LogEvent(@"没有可重做的步骤");
+        return;
+    }
+    NSString *target = [self.redoStack lastObject];
+    [self.redoStack removeLastObject];
+    [self.undoStack addObject:self.textView.text ?: @""];
+
+    [self applyNewText:target];
+    LogEvent(@"已重做一步");
+}
+
+- (void)updateUndoButtons {
+    self.undoItem.enabled = self.undoStack.count > 0;
+    self.redoItem.enabled = self.redoStack.count > 0;
+}
+
+#pragma mark 保存（二次确认）
 
 - (void)saveTapped {
     if (!self.dirty) { return; }
@@ -1577,8 +1757,8 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
     [self.view addSubview:toast];
     [NSLayoutConstraint activateConstraints:@[
         [toast.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
-        [toast.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-30],
-        [toast.widthAnchor constraintEqualToConstant:120],
+        [toast.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-56],
+        [toast.widthAnchor constraintEqualToConstant:130],
         [toast.heightAnchor constraintEqualToConstant:36],
     ]];
     toast.alpha = 0;
@@ -1600,10 +1780,11 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
 - (void)hideFindBar {
     self.findBar.hidden = YES;
     self.findField.text = @"";
+    self.replaceField.text = @"";
     self.matches = @[];
     self.currentMatch = -1;
     self.findCountLabel.text = @"";
-    [self.findField resignFirstResponder];
+    [self.view endEditing:YES];
     [self clearHighlight];
     LogEvent(@"关闭查找，已清除高亮");
 }
@@ -1640,7 +1821,7 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
 
     NSString *keyword = self.findField.text ?: @"";
     if (keyword.length) {
-        LogEvent(@"源码查找「%@」命中 %lu 处", keyword, (unsigned long)self.matches.count);
+        LogEvent(@"查找「%@」命中 %lu 处", keyword, (unsigned long)self.matches.count);
     }
     [self highlightAndJump];
 }
@@ -1664,7 +1845,59 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
     [self highlightAndJump];
 }
 
-#pragma mark 高亮：黄色=全部命中，橙色=当前这一处
+#pragma mark 替换
+
+- (void)replaceCurrent {
+    NSString *keyword = self.findField.text ?: @"";
+    if (keyword.length == 0) { return; }
+    [self recomputeMatches];
+    if (self.matches.count == 0) {
+        [self showToast:@"没有可替换的内容"];
+        return;
+    }
+
+    NSInteger index = self.currentMatch < 0 ? 0 : self.currentMatch;
+    NSRange range = [self.matches[index] rangeValue];
+    NSMutableString *text = [self.textView.text mutableCopy];
+    if (NSMaxRange(range) > text.length) { return; }
+
+    [self rememberBeforeChange];
+    [text replaceCharactersInRange:range withString:(self.replaceField.text ?: @"")];
+    [self applyNewText:text];
+
+    self.currentMatch = MIN(index, (NSInteger)self.matches.count - 1);
+    [self highlightAndJump];
+    LogEvent(@"替换 1 处");
+    [self showToast:@"已替换"];
+}
+
+- (void)replaceAll {
+    NSString *keyword = self.findField.text ?: @"";
+    if (keyword.length == 0) { return; }
+    [self recomputeMatches];
+    if (self.matches.count == 0) {
+        [self showToast:@"没有可替换的内容"];
+        return;
+    }
+
+    NSString *replacement = self.replaceField.text ?: @"";
+    NSArray<NSValue *> *matches = self.matches;
+    NSMutableString *text = [self.textView.text mutableCopy];
+
+    [self rememberBeforeChange];
+    // 从后往前替换，避免前面的替换影响后面的位置
+    for (NSInteger index = (NSInteger)matches.count - 1; index >= 0; index--) {
+        NSRange range = [matches[index] rangeValue];
+        if (NSMaxRange(range) > text.length) { continue; }
+        [text replaceCharactersInRange:range withString:replacement];
+    }
+    [self applyNewText:text];
+
+    LogEvent(@"全部替换：%lu 处", (unsigned long)matches.count);
+    [self showToast:[NSString stringWithFormat:@"已替换 %lu 处", (unsigned long)matches.count]];
+}
+
+#pragma mark 高亮：黄色=全部命中，橙色=当前
 
 - (void)highlightAndJump {
     NSString *text = self.textView.text ?: @"";
@@ -1693,15 +1926,12 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
                            range:range];
     }
 
-    self.applyingHighlight = YES;
     self.textView.attributedText = attributed;
     self.textView.typingAttributes = [self plainAttributes];
-    self.applyingHighlight = NO;
 
     if (self.currentMatch >= 0 && self.currentMatch < (NSInteger)count) {
         NSRange current = [self.matches[self.currentMatch] rangeValue];
         if (NSMaxRange(current) <= text.length) {
-            // 光标放到命中词前面（length 0，避免系统蓝选中盖住橙色高亮）
             self.textView.selectedRange = NSMakeRange(current.location, 0);
             [self.textView scrollRangeToVisible:current];
         }
@@ -1711,11 +1941,9 @@ static const NSUInteger kHighlightLimit = 300000;   // 超过就不上色，避�
 - (void)clearHighlight {
     NSString *text = self.textView.text ?: @"";
     if (text.length == 0 || text.length > kHighlightLimit) { return; }
-    self.applyingHighlight = YES;
     self.textView.attributedText =
         [[NSAttributedString alloc] initWithString:text attributes:[self plainAttributes]];
     self.textView.typingAttributes = [self plainAttributes];
-    self.applyingHighlight = NO;
 }
 
 @end
