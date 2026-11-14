@@ -470,7 +470,7 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     self.emptyLabel.textAlignment = NSTextAlignmentCenter;
     self.emptyLabel.font = [UIFont systemFontOfSize:14];
     self.emptyLabel.textColor = [UIColor secondaryLabelColor];
-    self.emptyLabel.text = @"还没有 HTML 文件\n点右上角 ＋ 导入文件、粘贴代码或打开文件夹";
+    self.emptyLabel.text = @"还没有 HTML 文件\n可以点下面的按钮导入，\n也可以把 html 丢进「文件」App → 我的 iPhone → HTML 再下拉刷新";
     self.emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.emptyLabel];
     [NSLayoutConstraint activateConstraints:@[
@@ -528,6 +528,12 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     self.navigationItem.searchController = self.searchController;
     self.navigationItem.hidesSearchBarWhenScrolling = NO;
     self.definesPresentationContext = YES;
+
+    UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
+    [refreshControl addTarget:self
+                       action:@selector(handleRefresh:)
+             forControlEvents:UIControlEventValueChanged];
+    self.tableView.refreshControl = refreshControl;
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(filesChanged:)
@@ -590,6 +596,14 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     self.emptyLabel.hidden = hasFiles;
     self.emptyButton.hidden = hasFiles;
     self.tableView.hidden = !hasFiles;
+}
+
+- (void)handleRefresh:(UIRefreshControl *)refreshControl {
+    [[VStore shared] reload];
+    [self.tableView reloadData];
+    [self refreshEmptyState];
+    [refreshControl endRefreshing];
+    LogEvent(@"已刷新：%lu 个文件", (unsigned long)[VStore shared].files.count);
 }
 
 - (void)copyLog {
