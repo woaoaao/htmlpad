@@ -1,4 +1,4 @@
-//
+﻿//
 //  viewer.m — 「HTML」本地 HTML 查看器（Objective-C 版，功能对齐 SwiftUI 版）
 //  Ubuntu 交叉编译（clang + ld64.lld + iPhoneOS SDK）→ 未签名 ipa
 //
@@ -9,7 +9,9 @@
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
 
-@class RootTabController;
+@interface RootTabController : UITabBarController
+- (void)setOverrideColorScheme;
+@end
 
 #pragma mark - 设置读写
 
@@ -262,7 +264,7 @@ static NSString *ReadTextFile(NSString *path) {
 
     self.nameField = [[UITextField alloc] init];
     self.nameField.text = @"新建页面.html";
-    self.nameField.borderStyle = UITextFieldBorderStyleRoundedRect;
+    self.nameField.borderStyle = UITextBorderStyleRoundedRect;
     self.nameField.autocapitalizationType = UITextAutocapitalizationTypeNone;
     self.nameField.autocorrectionType = UITextAutocorrectionTypeNo;
     self.nameField.translatesAutoresizingMaskIntoConstraints = NO;
@@ -547,12 +549,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     };
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:paste];
     nav.modalPresentationStyle = UIModalPresentationPageSheet;
-    if (@available(iOS 15.0, *)) {
-        UISheetPresentationController *sheet = nav.sheetPresentationController;
-        sheet.detents = @[UISheetPresentationControllerDetent.mediumDetent,
-                          UISheetPresentationControllerDetent.largeDetent];
-        sheet.prefersGrabberVisible = YES;
-    }
+
     [self presentViewController:nav animated:YES completion:nil];
 }
 
@@ -969,6 +966,8 @@ static NSString *const kViewportJS =
                                             handler:^(UIAction *action) { [weakSelf setStyleMode:2 button:button]; }];
     UIMenu *styleMenu = [UIMenu menuWithTitle:@"显示"
                                         image:[UIImage systemImageNamed:@"circle.lefthalf.filled"]
+                                   identifier:nil
+                                      options:0
                                      children:@[systemStyle, lightStyle, darkStyle]];
 
     UIAction *allowNetwork = [UIAction actionWithTitle:@"允许"
@@ -981,6 +980,8 @@ static NSString *const kViewportJS =
                                               handler:^(UIAction *action) { [weakSelf setNetworkAllowed:NO button:button]; }];
     UIMenu *networkMenu = [UIMenu menuWithTitle:@"网络访问"
                                           image:[UIImage systemImageNamed:(weakSelf.networkAllowed ? @"network" : @"network.slash")]
+                                     identifier:nil
+                                        options:0
                                        children:@[allowNetwork, denyNetwork]];
 
     UIAction *inApp = [UIAction actionWithTitle:@"App 内打开"
@@ -993,6 +994,8 @@ static NSString *const kViewportJS =
                                            handler:^(UIAction *action) { [weakSelf setExternalInSafari:YES button:button]; }];
     UIMenu *externalMenu = [UIMenu menuWithTitle:@"外部链接"
                                             image:[UIImage systemImageNamed:@"arrow.up.right.square"]
+                                       identifier:nil
+                                          options:0
                                          children:@[inApp, inSafari]];
 
     UIAction *share = [UIAction actionWithTitle:@"分享文件"
@@ -1186,9 +1189,6 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 
 #pragma mark - 根 TabBar
 
-@interface RootTabController : UITabBarController
-- (void)setOverrideColorScheme;
-@end
 
 @implementation RootTabController
 
