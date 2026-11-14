@@ -37,6 +37,13 @@ struct HTMLFile: Identifiable, Hashable {
     }
 }
 
+// MARK: - 通知
+
+extension Notification.Name {
+    /// 源码页保存成功后发出，预览页收到后自动重新加载
+    static let htmlFileSaved = Notification.Name("HTML.fileSaved")
+}
+
 // MARK: - 模型
 
 @MainActor

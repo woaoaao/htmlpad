@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct HomeView: View {
@@ -16,6 +17,8 @@ struct HomeView: View {
     @State private var showHTMLImporter = false
     @State private var showFolderImporter = false
     @State private var showPasteSheet = false
+    @State private var pasteSeed = "新建页面.html"
+    @State private var pasteCode = ""
     @State private var previewFile: HTMLFile?
     @State private var pendingDelete: HTMLFile?
 
@@ -71,6 +74,9 @@ struct HomeView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .refreshable {
+                        fileManager.refresh()
+                    }
                 }
             }
             .navigationTitle("HTML")
@@ -112,7 +118,7 @@ struct HomeView: View {
             }
             // 粘贴代码（半屏 Sheet）
             .sheet(isPresented: $showPasteSheet) {
-                PasteCodeSheet { name, code in
+                PasteCodeSheet(initialName: pasteSeed, initialCode: pasteCode) { name, code in
                     if let url = fileManager.createFile(named: name, content: code) {
                         if let created = fileManager.files.first(where: { $0.url == url }) {
                             previewFile = created
@@ -152,9 +158,20 @@ struct HomeView: View {
             }
 
             Button {
+                pasteSeed = "新建页面.html"
+                pasteCode = ""
                 showPasteSheet = true
             } label: {
                 Label("粘贴代码", systemImage: "doc.on.clipboard")
+            }
+
+            Button {
+                let clipboard = UIPasteboard.general.string ?? ""
+                pasteSeed = "剪贴板页面.html"
+                pasteCode = clipboard
+                showPasteSheet = true
+            } label: {
+                Label("从剪贴板新建文件", systemImage: "doc.on.clipboard.fill")
             }
 
             Button {
@@ -225,11 +242,19 @@ struct PasteCodeSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var fileName = "新建页面.html"
-    @State private var code = ""
+    @State private var fileName: String
+    @State private var code: String
 
     /// 保存回调：(文件名, HTML 代码)
     let onSave: (String, String) -> Void
+
+    init(initialName: String = "未命名.html",
+         initialCode: String = "",
+         onSave: @escaping (String, String) -> Void) {
+        _fileName = State(initialValue: initialName)
+        _code = State(initialValue: initialCode)
+        self.onSave = onSave
+    }
 
     var body: some View {
         NavigationStack {

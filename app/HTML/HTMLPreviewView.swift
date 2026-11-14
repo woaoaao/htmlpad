@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct HTMLPreviewView: View {
 
@@ -58,6 +59,9 @@ struct HTMLPreviewView: View {
             .toolbar { toolbarContent }
             .navigationDestination(isPresented: $showSource) {
                 SourceCodeView(file: file)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .htmlFileSaved)) { _ in
+                reloadToken += 1
             }
         }
     }
@@ -128,7 +132,7 @@ struct HTMLPreviewView: View {
         Button {
             showSource = true
         } label: {
-            Label("查看源代码", systemImage: "chevron.left.forwardslash.chevron.right")
+            Label("编辑源代码", systemImage: "chevron.left.forwardslash.chevron.right")
         }
 
         Button {
