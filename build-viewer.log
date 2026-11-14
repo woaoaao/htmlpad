@@ -11,21 +11,21 @@ link exit=0
 === 组装 .app ===
 === 检查 ===
 /home/runner/work/htmlpad/htmlpad/out-viewer/Payload/HTML.app/HTML: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-total 216
-drwxr-xr-x 2 runner runner   4096 Nov 14 00:23 .
-drwxr-xr-x 3 runner runner   4096 Nov 14 00:23 ..
--rw-r--r-- 1 runner runner   2520 Nov 14 00:23 AppIcon29x29@2x.png
--rw-r--r-- 1 runner runner   4312 Nov 14 00:23 AppIcon29x29@3x.png
--rw-r--r-- 1 runner runner   3196 Nov 14 00:23 AppIcon40x40@2x.png
--rw-r--r-- 1 runner runner   5484 Nov 14 00:23 AppIcon40x40@3x.png
--rw-r--r-- 1 runner runner   5484 Nov 14 00:23 AppIcon60x60@2x.png
--rw-r--r-- 1 runner runner   8727 Nov 14 00:23 AppIcon60x60@3x.png
--rw-r--r-- 1 runner runner   6886 Nov 14 00:23 AppIcon76x76@2x~ipad.png
--rwxr-xr-x 1 runner runner 191896 Nov 14 00:23 HTML
--rw-r--r-- 1 runner runner   2400 Nov 14 00:23 Info.plist
+total 224
+drwxr-xr-x 2 runner runner   4096 Nov 14 00:29 .
+drwxr-xr-x 3 runner runner   4096 Nov 14 00:29 ..
+-rw-r--r-- 1 runner runner   2520 Nov 14 00:29 AppIcon29x29@2x.png
+-rw-r--r-- 1 runner runner   4312 Nov 14 00:29 AppIcon29x29@3x.png
+-rw-r--r-- 1 runner runner   3196 Nov 14 00:29 AppIcon40x40@2x.png
+-rw-r--r-- 1 runner runner   5484 Nov 14 00:29 AppIcon40x40@3x.png
+-rw-r--r-- 1 runner runner   5484 Nov 14 00:29 AppIcon60x60@2x.png
+-rw-r--r-- 1 runner runner   8727 Nov 14 00:29 AppIcon60x60@3x.png
+-rw-r--r-- 1 runner runner   6886 Nov 14 00:29 AppIcon76x76@2x~ipad.png
+-rwxr-xr-x 1 runner runner 192520 Nov 14 00:29 HTML
+-rw-r--r-- 1 runner runner   2400 Nov 14 00:29 Info.plist
 plist ok: com.woaoaao.html HTML min 14.5
 === 打包 ipa ===
--rw-r--r-- 1 runner runner 88550 Nov 14 00:23 /home/runner/work/htmlpad/htmlpad/HTML-viewer-unsigned.ipa
+-rw-r--r-- 1 runner runner 90181 Nov 14 00:29 /home/runner/work/htmlpad/htmlpad/HTML-viewer-unsigned.ipa
 entries: 11
    Payload/
    Payload/HTML.app/
