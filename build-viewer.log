@@ -5,91 +5,65 @@ sdk ok
 Ubuntu clang version 21.1.8 (6ubuntu1)
 Target: x86_64-pc-linux-gnu
 === 编译 viewer.m ===
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:265:34: error: use of undeclared identifier 'UITextFieldBorderStyleRoundedRect'; did you mean 'UITextBorderStyleRoundedRect'?
-  265 |     self.nameField.borderStyle = UITextFieldBorderStyleRoundedRect;
-      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |                                  UITextBorderStyleRoundedRect
-/home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UITextField.h:35:5: note: 'UITextBorderStyleRoundedRect' declared here
-   35 |     UITextBorderStyleRoundedRect
-      |     ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:509:71: warning: 'UIDocumentPickerModeOpen' is deprecated: first deprecated in iOS 14.0 - Use appropriate initializers instead [-Wdeprecated-declarations]
-  509 |                                                                inMode:UIDocumentPickerModeOpen];
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:511:71: warning: 'UIDocumentPickerModeOpen' is deprecated: first deprecated in iOS 14.0 - Use appropriate initializers instead [-Wdeprecated-declarations]
+  511 |                                                                inMode:UIDocumentPickerModeOpen];
       |                                                                       ^
 /home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:29:29: note: 'UIDocumentPickerMode' has been explicitly marked deprecated here
    29 | typedef NS_ENUM(NSUInteger, UIDocumentPickerMode) {
       |                             ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:508:49: warning: 'initWithDocumentTypes:inMode:' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
-  508 |         [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.html", @"public.plain-text"]
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:510:49: warning: 'initWithDocumentTypes:inMode:' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
+  510 |         [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.html", @"public.plain-text"]
       |                                                 ^~~~~~~~~~~~~~~~~~~~~
       |                                                 use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead
 /home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:39:1: note: 'initWithDocumentTypes:inMode:' has been explicitly marked deprecated here
    39 | - (instancetype)initWithDocumentTypes:(NSArray <NSString *>*)allowedUTIs inMode:(UIDocumentPickerMode)mode NS_DESIGNATED_INITIALIZER API_DEPRECATED_WITH_REPLACEMENT("use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead", ios(8.0, 14.0)) API_UNAVAILABLE(tvos);
       | ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:518:71: warning: 'UIDocumentPickerModeOpen' is deprecated: first deprecated in iOS 14.0 - Use appropriate initializers instead [-Wdeprecated-declarations]
-  518 |                                                                inMode:UIDocumentPickerModeOpen];
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:520:71: warning: 'UIDocumentPickerModeOpen' is deprecated: first deprecated in iOS 14.0 - Use appropriate initializers instead [-Wdeprecated-declarations]
+  520 |                                                                inMode:UIDocumentPickerModeOpen];
       |                                                                       ^
 /home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:29:29: note: 'UIDocumentPickerMode' has been explicitly marked deprecated here
    29 | typedef NS_ENUM(NSUInteger, UIDocumentPickerMode) {
       |                             ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:517:49: warning: 'initWithDocumentTypes:inMode:' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
-  517 |         [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.folder"]
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:519:49: warning: 'initWithDocumentTypes:inMode:' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
+  519 |         [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.folder"]
       |                                                 ^~~~~~~~~~~~~~~~~~~~~
       |                                                 use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead
 /home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIDocumentPickerViewController.h:39:1: note: 'initWithDocumentTypes:inMode:' has been explicitly marked deprecated here
    39 | - (instancetype)initWithDocumentTypes:(NSArray <NSString *>*)allowedUTIs inMode:(UIDocumentPickerMode)mode NS_DESIGNATED_INITIALIZER API_DEPRECATED_WITH_REPLACEMENT("use initForOpeningContentTypes:asCopy: or initForOpeningContentTypes: instead", ios(8.0, 14.0)) API_UNAVAILABLE(tvos);
       | ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:551:9: error: unknown type name 'UISheetPresentationController'; did you mean 'UIPresentationController'?
-  551 |         UISheetPresentationController *sheet = nav.sheetPresentationController;
-      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |         UIPresentationController
-/home/runner/work/htmlpad/htmlpad/sdk/iPhoneOS14.5.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIViewControllerTransitioning.h:173:8: note: 'UIPresentationController' declared here
-  173 | @class UIPresentationController;
-      |        ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:551:52: error: property 'sheetPresentationController' not found on object of type 'UINavigationController *'
-  551 |         UISheetPresentationController *sheet = nav.sheetPresentationController;
-      |                                                    ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:552:15: error: property 'detents' not found on object of type 'UIPresentationController *'
-  552 |         sheet.detents = @[UISheetPresentationControllerDetent.mediumDetent,
-      |               ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:552:27: error: use of undeclared identifier 'UISheetPresentationControllerDetent'
-  552 |         sheet.detents = @[UISheetPresentationControllerDetent.mediumDetent,
-      |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:554:15: error: property 'prefersGrabberVisible' not found on object of type 'UIPresentationController *'
-  554 |         sheet.prefersGrabberVisible = YES;
-      |               ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:789:47: error: receiver 'RootTabController' for class message is a forward declaration
-  789 |     if ([self.tabBarController isKindOfClass:[RootTabController class]]) {
-      |                                               ^~~~~~~~~~~~~~~~~
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:12:8: note: forward declaration of class here
-   12 | @class RootTabController;
-      |        ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:790:10: error: receiver type 'RootTabController' for instance message is a forward declaration
-  790 |         [(RootTabController *)self.tabBarController setOverrideColorScheme];
-      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:12:8: note: forward declaration of class here
-   12 | @class RootTabController;
-      |        ^
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:970:33: error: no known class method for selector 'menuWithTitle:image:children:'
-  970 |     UIMenu *styleMenu = [UIMenu menuWithTitle:@"显示"
-      |                                 ^~~~~~~~~~~~~~~~~~~~~
-  971 |                                         image:[UIImage systemImageNamed:@"circle.lefthalf.filled"]
-      |                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  972 |                                      children:@[systemStyle, lightStyle, darkStyle]];
-      |                                      ~~~~~~~~
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:982:35: error: no known class method for selector 'menuWithTitle:image:children:'
-  982 |     UIMenu *networkMenu = [UIMenu menuWithTitle:@"网络访问"
-      |                                   ^~~~~~~~~~~~~~~~~~~~~~~~~
-  983 |                                           image:[UIImage systemImageNamed:(weakSelf.networkAllowed ? @"network" : @"network.slash")]
-      |                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  984 |                                        children:@[allowNetwork, denyNetwork]];
-      |                                        ~~~~~~~~
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:994:36: error: no known class method for selector 'menuWithTitle:image:children:'
-  994 |     UIMenu *externalMenu = [UIMenu menuWithTitle:@"外部链接"
-      |                                    ^~~~~~~~~~~~~~~~~~~~~~~~~
-  995 |                                             image:[UIImage systemImageNamed:@"arrow.up.right.square"]
-      |                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  996 |                                          children:@[inApp, inSafari]];
-      |                                          ~~~~~~~~
-4 warnings and 11 errors generated.
-cc exit=1
-!!! 编译失败
+4 warnings generated.
+cc exit=0
+=== 链接 ===
+link exit=0
+=== 组装 .app ===
+=== 检查 ===
+/home/runner/work/htmlpad/htmlpad/out-viewer/Payload/HTML.app/HTML: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
+total 212
+drwxr-xr-x 2 runner runner   4096 Nov 14 00:10 .
+drwxr-xr-x 3 runner runner   4096 Nov 14 00:10 ..
+-rw-r--r-- 1 runner runner   2520 Nov 14 00:10 AppIcon29x29@2x.png
+-rw-r--r-- 1 runner runner   4312 Nov 14 00:10 AppIcon29x29@3x.png
+-rw-r--r-- 1 runner runner   3196 Nov 14 00:10 AppIcon40x40@2x.png
+-rw-r--r-- 1 runner runner   5484 Nov 14 00:10 AppIcon40x40@3x.png
+-rw-r--r-- 1 runner runner   5484 Nov 14 00:10 AppIcon60x60@2x.png
+-rw-r--r-- 1 runner runner   8727 Nov 14 00:10 AppIcon60x60@3x.png
+-rw-r--r-- 1 runner runner   6886 Nov 14 00:10 AppIcon76x76@2x~ipad.png
+-rwxr-xr-x 1 runner runner 174016 Nov 14 00:10 HTML
+-rw-r--r-- 1 runner runner   2400 Nov 14 00:10 Info.plist
+plist ok: com.woaoaao.html HTML min 14.5
+=== 打包 ipa ===
+-rw-r--r-- 1 runner runner 86761 Nov 14 00:10 /home/runner/work/htmlpad/htmlpad/HTML-viewer-unsigned.ipa
+entries: 11
+   Payload/
+   Payload/HTML.app/
+   Payload/HTML.app/Info.plist
+   Payload/HTML.app/AppIcon29x29@3x.png
+   Payload/HTML.app/AppIcon40x40@3x.png
+   Payload/HTML.app/AppIcon29x29@2x.png
+   Payload/HTML.app/AppIcon76x76@2x~ipad.png
+   Payload/HTML.app/AppIcon40x40@2x.png
+   Payload/HTML.app/AppIcon60x60@2x.png
+   Payload/HTML.app/AppIcon60x60@3x.png
+   Payload/HTML.app/HTML
+IPA_OK
+=== 完成 ===
