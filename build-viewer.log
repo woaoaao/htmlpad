@@ -5,42 +5,64 @@ sdk ok
 Ubuntu clang version 21.1.8 (6ubuntu1)
 Target: x86_64-pc-linux-gnu
 === 编译 viewer.m ===
-/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:61:18: warning: unused function 'ReadTextFile' [-Wunused-function]
-   61 | static NSString *ReadTextFile(NSString *path) {
-      |                  ^~~~~~~~~~~~
-1 warning generated.
-cc exit=0
-=== 链接 ===
-link exit=0
-=== 组装 .app ===
-=== 检查 ===
-/home/runner/work/htmlpad/htmlpad/out-viewer/Payload/HTML.app/HTML: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-total 268
-drwxr-xr-x 2 runner runner   4096 Nov 14 01:38 .
-drwxr-xr-x 3 runner runner   4096 Nov 14 01:38 ..
--rw-r--r-- 1 runner runner   2520 Nov 14 01:38 AppIcon29x29@2x.png
--rw-r--r-- 1 runner runner   4312 Nov 14 01:38 AppIcon29x29@3x.png
--rw-r--r-- 1 runner runner   3196 Nov 14 01:38 AppIcon40x40@2x.png
--rw-r--r-- 1 runner runner   5484 Nov 14 01:38 AppIcon40x40@3x.png
--rw-r--r-- 1 runner runner   5484 Nov 14 01:38 AppIcon60x60@2x.png
--rw-r--r-- 1 runner runner   8727 Nov 14 01:38 AppIcon60x60@3x.png
--rw-r--r-- 1 runner runner   6886 Nov 14 01:38 AppIcon76x76@2x~ipad.png
--rwxr-xr-x 1 runner runner 253784 Nov 14 01:38 HTML
--rw-r--r-- 1 runner runner   2400 Nov 14 01:38 Info.plist
-plist ok: com.woaoaao.html HTML min 14.5
-=== 打包 ipa ===
--rw-r--r-- 1 runner runner 107579 Nov 14 01:38 /home/runner/work/htmlpad/htmlpad/HTML-viewer-unsigned.ipa
-entries: 11
-   Payload/
-   Payload/HTML.app/
-   Payload/HTML.app/Info.plist
-   Payload/HTML.app/AppIcon29x29@3x.png
-   Payload/HTML.app/AppIcon40x40@3x.png
-   Payload/HTML.app/AppIcon29x29@2x.png
-   Payload/HTML.app/AppIcon76x76@2x~ipad.png
-   Payload/HTML.app/AppIcon40x40@2x.png
-   Payload/HTML.app/AppIcon60x60@2x.png
-   Payload/HTML.app/AppIcon60x60@3x.png
-   Payload/HTML.app/HTML
-IPA_OK
-=== 完成 ===
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:154:5: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  154 |     LogEvent(@"开始导入 %@", name);
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:472:5: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  472 |     LogEvent(@"点到了 +");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:489:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  489 |     PresentSafely(self, sheet, @"添加菜单");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:502:9: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  502 |         LogEvent(@"剪贴板里没有文本");
+      |         ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:508:9: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  508 |         PresentSafely(self, alert, @"剪贴板为空");
+      |         ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:527:9: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  527 |         LogEvent(@"已从剪贴板新建：%@", name);
+      |         ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:531:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  531 |     PresentSafely(self, alert, @"剪贴板新建");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:539:5: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  539 |     LogEvent(@"已刷新：%lu 个文件", (unsigned long)[VStore shared].files.count);
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:616:9: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  616 |         PresentSafely(weakSelf, alert, @"删除确认");
+      |         ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:641:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  641 |     PresentSafely(self, nav, @"预览页");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:645:5: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  645 |     LogEvent(@"presentPaste 开始");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:655:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  655 |     PresentSafely(self, nav, @"粘贴代码");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:743:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  743 |     PresentSafely(self, nav, @"预览页");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:1027:9: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+ 1027 |         LogEvent(@"源码已改动，预览已刷新");
+      |         ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:1049:5: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+ 1049 |     LogEvent(@"点击编辑按钮");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:1055:5: error: call to undeclared function 'LogEvent'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+ 1055 |     LogEvent(@"点到了 ⋯");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:1102:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+ 1102 |     PresentSafely(self, sheet, @"更多菜单");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:1122:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+ 1122 |     PresentSafely(self, sheet, @"显示方式");
+      |     ^
+/home/runner/work/htmlpad/htmlpad/app/objc/viewer.m:1138:5: error: call to undeclared function 'PresentSafely'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+ 1138 |     PresentSafely(self, sheet, @"网络访问");
+      |     ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+cc exit=1
+!!! 编译失败
