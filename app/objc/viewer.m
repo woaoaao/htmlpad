@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 @interface RootTabController : UITabBarController
 - (void)setOverrideColorScheme;
@@ -67,6 +68,33 @@ static NSString *ReadTextFile(NSString *path) {
     if (text) { return text; }
     text = [[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
     return text ?: @"";
+}
+
+
+/// 统一的弹出入口：
+/// 从 UIMenu / UIContextualAction 的回调里同步 present 会被 UIKit 静默丢弃，
+/// 这里延到下一个 runloop，并在失败时给出可见提示，方便定位问题。
+static void PresentSafely(UIViewController *presenter, UIViewController *target, NSString *debugName) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.06 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        UIViewController *top = presenter;
+        while (top.presentedViewController) {
+            top = top.presentedViewController;
+        }
+        [top presentViewController:target animated:YES completion:nil];
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.9 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            if (top.presentedViewController != target) {
+                UIAlertController *alert =
+                    [UIAlertController alertControllerWithTitle:@"无法打开"
+                                                        message:[NSString stringWithFormat:@"%@ 没有弹出来", debugName]
+                                                 preferredStyle:UIAlertControllerStyleAlert];
+                [alert addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
+                [top presentViewController:alert animated:YES completion:nil];
+            }
+        });
+    });
 }
 
 #pragma mark - 数据层
@@ -366,6 +394,21 @@ static NSString *ReadTextFile(NSString *path) {
     self.navigationItem.searchController = self.searchController;
     self.navigationItem.hidesSearchBarWhenScrolling = NO;
     self.definesPresentationContext = YES;
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(filesChanged:)
+                                                 name:@"HTMLPadFilesChanged"
+                                               object:nil];
+}
+
+- (void)filesChanged:(NSNotification *)notification {
+    [[VStore shared] reload];
+    [self.tableView reloadData];
+    [self refreshEmptyState];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -477,7 +520,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
             [weakSelf refreshEmptyState];
         }]];
         [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-        [weakSelf presentViewController:alert animated:YES completion:nil];
+        PresentSafely(weakSelf, alert, @"删除确认");
         completion(YES);
     }];
 
@@ -502,25 +545,32 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     preview.file = file;
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:preview];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
-    [self presentViewController:nav animated:YES completion:nil];
+    PresentSafely(self, nav, @"预览页");
 }
 
 - (void)pickFile {
+    NSMutableArray<UTType *> *types = [NSMutableArray array];
+    UTType *html = [UTType typeWithIdentifier:@"public.html"];
+    if (html) { [types addObject:html]; }
+    UTType *text = [UTType typeWithIdentifier:@"public.plain-text"];
+    if (text) { [types addObject:text]; }
+    if (types.count == 0) { return; }
+
     UIDocumentPickerViewController *picker =
-        [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.html", @"public.plain-text"]
-                                                               inMode:UIDocumentPickerModeOpen];
+        [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:NO];
     picker.delegate = self;
     picker.allowsMultipleSelection = NO;
-    [self presentViewController:picker animated:YES completion:nil];
+    PresentSafely(self, picker, @"文件选择器");
 }
 
 - (void)pickFolder {
+    UTType *folderType = [UTType typeWithIdentifier:@"public.folder"];
     UIDocumentPickerViewController *picker =
-        [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.folder"]
-                                                               inMode:UIDocumentPickerModeOpen];
+        [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:(folderType ? @[folderType] : @[])
+                                                                    asCopy:NO];
     picker.delegate = self;
     picker.allowsMultipleSelection = NO;
-    [self presentViewController:picker animated:YES completion:nil];
+    PresentSafely(self, picker, @"文件夹选择器");
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
@@ -549,8 +599,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     };
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:paste];
     nav.modalPresentationStyle = UIModalPresentationPageSheet;
-
-    [self presentViewController:nav animated:YES completion:nil];
+    PresentSafely(self, nav, @"粘贴代码");
 }
 
 @end
@@ -638,7 +687,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     preview.file = file;
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:preview];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
-    [self presentViewController:nav animated:YES completion:nil];
+    PresentSafely(self, nav, @"预览页");
 }
 
 - (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView
@@ -1061,7 +1110,7 @@ static NSString *const kViewportJS =
         [[UIActivityViewController alloc] initWithActivityItems:@[[NSURL fileURLWithPath:path]]
                                           applicationActivities:nil];
     activity.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItems.firstObject;
-    [self presentViewController:activity animated:YES completion:nil];
+    PresentSafely(self, activity, @"分享面板");
 }
 
 - (void)closeTapped {
@@ -1182,7 +1231,7 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
         [[UIActivityViewController alloc] initWithActivityItems:@[[NSURL fileURLWithPath:path]]
                                           applicationActivities:nil];
     activity.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
-    [self presentViewController:activity animated:YES completion:nil];
+    PresentSafely(self, activity, @"分享面板");
 }
 
 @end
@@ -1234,9 +1283,27 @@ createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
 
 - (BOOL)application:(UIApplication *)application
 didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    NSURL *launchURL = launchOptions[UIApplicationLaunchOptionsURLKey];
+    if (launchURL.isFileURL) {
+        [[VStore shared] importFromURL:launchURL];
+    }
+
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.window.rootViewController = [[RootTabController alloc] init];
     [self.window makeKeyAndVisible];
+    return YES;
+}
+
+/// 从「文件」App / 其它 App 用「HTML」打开文件 → 直接导入到沙盒
+- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options {
+    if (url.isFileURL) {
+        [[VStore shared] importFromURL:url];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"HTMLPadFilesChanged" object:nil];
+        });
+    }
     return YES;
 }
 

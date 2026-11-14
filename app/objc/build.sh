@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # 「HTML」本地 HTML 查看器 —— Ubuntu 交叉编译成未签名 ipa
 set +e
 
@@ -33,7 +33,7 @@ if [ $CC -ne 0 ]; then echo "!!! 编译失败"; exit 0; fi
 echo "=== 链接 ==="
 clang -target arm64-apple-ios14.5 -isysroot "$SDK" -fuse-ld=lld \
       "$ROOT/build-viewer/viewer.o" \
-      -framework UIKit -framework Foundation -framework WebKit \
+      -framework UIKit -framework Foundation -framework WebKit -framework UniformTypeIdentifiers \
       -framework CoreGraphics -framework QuartzCore \
       -o "$APP/HTML"
 LINK=$?
