@@ -112,13 +112,19 @@ typedef NS_ENUM(NSInteger, VStoreRenameResult) {
 
 @interface VStore : NSObject
 @property (nonatomic, copy) NSString *rootPath;
+@property (nonatomic, copy) NSString *trashPath;
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *files;
 @property (nonatomic, strong) NSMutableArray<NSString *> *favorites;
 + (instancetype)shared;
 - (void)reload;
 - (BOOL)importFromURL:(NSURL *)url;
 - (BOOL)createFileNamed:(NSString *)name content:(NSString *)content;
-- (void)deleteFile:(NSDictionary *)file;
+- (NSDictionary *)deleteFile:(NSDictionary *)file;
+- (NSArray<NSDictionary *> *)trashItems;
+- (BOOL)restoreFromTrash:(NSDictionary *)item;
+- (void)permanentlyDeleteTrashItem:(NSDictionary *)item;
+- (void)emptyTrash;
+- (NSUInteger)trashCount;
 - (VStoreRenameResult)renameFile:(NSDictionary *)file
                        toRawName:(NSString *)rawName
                          newFile:(NSDictionary **)outFile;
@@ -147,6 +153,13 @@ typedef NS_ENUM(NSInteger, VStoreRenameResult) {
         NSString *documents = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
         _rootPath = [documents stringByAppendingPathComponent:@"HTML"];
         [[NSFileManager defaultManager] createDirectoryAtPath:_rootPath
+                                  withIntermediateDirectories:YES
+                                                   attributes:nil
+                                                        error:NULL];
+
+        // 回收站是另一个独立目录（以点开头，「文件」App 里看不到，不会干扰正常文件列表）
+        _trashPath = [documents stringByAppendingPathComponent:@".Trash"];
+        [[NSFileManager defaultManager] createDirectoryAtPath:_trashPath
                                   withIntermediateDirectories:YES
                                                    attributes:nil
                                                         error:NULL];
@@ -277,10 +290,164 @@ typedef NS_ENUM(NSInteger, VStoreRenameResult) {
     return ok;
 }
 
-- (void)deleteFile:(NSDictionary *)file {
-    [[NSFileManager defaultManager] removeItemAtPath:file[@"path"] error:NULL];
-    if (file[@"rel"]) { [self.favorites removeObject:file[@"rel"]]; }
-    [UD() setObject:self.favorites forKey:@"html.favorites.v1"];
+#pragma mark 回收站
+
+- (NSString *)trashIndexPath {
+    return [self.trashPath stringByAppendingPathComponent:@"index.plist"];
+}
+
+- (NSMutableDictionary *)trashIndex {
+    NSDictionary *stored = [NSDictionary dictionaryWithContentsOfFile:[self trashIndexPath]];
+    return stored ? [stored mutableCopy] : [NSMutableDictionary dictionary];
+}
+
+- (void)saveTrashIndex:(NSDictionary *)index {
+    [index writeToFile:[self trashIndexPath] atomically:YES];
+}
+
+/// 把文件移进回收站；返回回收站条目（可用于「撤销」），失败返回 nil
+- (NSDictionary *)deleteFile:(NSDictionary *)file {
+    NSString *path = file[@"path"];
+    if (path.length == 0) { return nil; }
+
+    NSFileManager *manager = [NSFileManager defaultManager];
+    NSString *trash = self.trashPath;
+    [manager createDirectoryAtPath:trash withIntermediateDirectories:YES attributes:nil error:NULL];
+
+    NSString *originalName = path.lastPathComponent;
+    NSString *target = [trash stringByAppendingPathComponent:originalName];
+    NSString *base = originalName.stringByDeletingPathExtension;
+    NSString *extension = originalName.pathExtension;
+    NSInteger index = 2;
+    while ([manager fileExistsAtPath:target]) {
+        NSString *next = extension.length
+            ? [NSString stringWithFormat:@"%@-%ld.%@", base, (long)index, extension]
+            : [NSString stringWithFormat:@"%@-%ld", base, (long)index];
+        target = [trash stringByAppendingPathComponent:next];
+        index += 1;
+    }
+
+    NSError *error = nil;
+    if (![manager moveItemAtPath:path toPath:target error:&error]) {
+        LogEvent(@"移入回收站失败：%@", error.localizedDescription ?: @"未知");
+        return nil;
+    }
+
+    NSMutableDictionary *trashIndex = [self trashIndex];
+    trashIndex[target.lastPathComponent] = @{
+        @"originalRel": file[@"rel"] ?: originalName,
+        @"deletedAt": [NSDate date],
+    };
+    [self saveTrashIndex:trashIndex];
+
+    [self reload];
+    LogEvent(@"已移入回收站：%@", originalName);
+    return [self trashItemNamed:target.lastPathComponent];
+}
+
+- (NSDictionary *)trashItemNamed:(NSString *)name {
+    for (NSDictionary *item in [self trashItems]) {
+        if ([item[@"name"] isEqual:name]) { return item; }
+    }
+    return nil;
+}
+
+- (NSArray<NSDictionary *> *)trashItems {
+    NSMutableArray *result = [NSMutableArray array];
+    NSFileManager *manager = [NSFileManager defaultManager];
+    NSArray *names = [manager contentsOfDirectoryAtPath:self.trashPath error:NULL];
+    NSMutableDictionary *trashIndex = [self trashIndex];
+
+    for (NSString *name in names) {
+        if ([name isEqualToString:@"index.plist"]) { continue; }
+        NSString *fullPath = [self.trashPath stringByAppendingPathComponent:name];
+        BOOL isDirectory = NO;
+        if (![manager fileExistsAtPath:fullPath isDirectory:&isDirectory] || isDirectory) { continue; }
+
+        NSDictionary *attributes = [manager attributesOfItemAtPath:fullPath error:NULL];
+        NSDictionary *meta = trashIndex[name];
+        [result addObject:@{
+            @"name": name,
+            @"path": fullPath,
+            @"rel": name,
+            @"size": attributes[NSFileSize] ?: @0,
+            @"deletedAt": meta[@"deletedAt"] ?: (attributes[NSFileModificationDate] ?: [NSDate date]),
+            @"originalRel": meta[@"originalRel"] ?: name,
+        }];
+    }
+
+    [result sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        return [b[@"deletedAt"] compare:a[@"deletedAt"]];
+    }];
+    return result;
+}
+
+- (NSUInteger)trashCount {
+    return [self trashItems].count;
+}
+
+/// 恢复到删除前的位置；原位置有同名文件时自动加 -2
+- (BOOL)restoreFromTrash:(NSDictionary *)item {
+    NSString *path = item[@"path"];
+    NSString *originalRel = item[@"originalRel"] ?: item[@"name"];
+    if (path.length == 0 || originalRel.length == 0) { return NO; }
+
+    NSFileManager *manager = [NSFileManager defaultManager];
+    NSString *target = [self.rootPath stringByAppendingPathComponent:originalRel];
+
+    NSString *parent = target.stringByDeletingLastPathComponent;
+    [manager createDirectoryAtPath:parent withIntermediateDirectories:YES attributes:nil error:NULL];
+
+    if ([manager fileExistsAtPath:target]) {
+        NSString *directory = target.stringByDeletingLastPathComponent;
+        NSString *name = target.lastPathComponent;
+        NSString *base = name.stringByDeletingPathExtension;
+        NSString *extension = name.pathExtension;
+        NSInteger index = 2;
+        while ([manager fileExistsAtPath:target]) {
+            NSString *next = extension.length
+                ? [NSString stringWithFormat:@"%@-%ld.%@", base, (long)index, extension]
+                : [NSString stringWithFormat:@"%@-%ld", base, (long)index];
+            target = [directory stringByAppendingPathComponent:next];
+            index += 1;
+        }
+    }
+
+    NSError *error = nil;
+    if (![manager moveItemAtPath:path toPath:target error:&error]) {
+        LogEvent(@"恢复失败：%@", error.localizedDescription ?: @"未知");
+        return NO;
+    }
+
+    NSMutableDictionary *trashIndex = [self trashIndex];
+    [trashIndex removeObjectForKey:item[@"name"]];
+    [self saveTrashIndex:trashIndex];
+
+    [self reload];
+    LogEvent(@"已从回收站恢复：%@", target.lastPathComponent);
+    return YES;
+}
+
+/// 彻底删除（不可恢复）
+- (void)permanentlyDeleteTrashItem:(NSDictionary *)item {
+    NSString *path = item[@"path"];
+    if (path.length) {
+        [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+    }
+    NSMutableDictionary *trashIndex = [self trashIndex];
+    [trashIndex removeObjectForKey:item[@"name"]];
+    [self saveTrashIndex:trashIndex];
+    [self reload];
+    LogEvent(@"已彻底删除：%@", item[@"name"]);
+}
+
+- (void)emptyTrash {
+    NSFileManager *manager = [NSFileManager defaultManager];
+    NSArray *names = [manager contentsOfDirectoryAtPath:self.trashPath error:NULL];
+    for (NSString *name in names) {
+        [manager removeItemAtPath:[self.trashPath stringByAppendingPathComponent:name] error:NULL];
+    }
+    LogEvent(@"回收站已清空");
     [self reload];
 }
 
@@ -382,6 +549,7 @@ typedef NS_ENUM(NSInteger, VStoreRenameResult) {
     }
     [self.favorites removeAllObjects];
     [UD() setObject:self.favorites forKey:@"html.favorites.v1"];
+    [self emptyTrash];
     [self reload];
 }
 
@@ -664,6 +832,23 @@ static void PresentRenameDialog(UIViewController *presenter,
     PresentSafely(self, sheet, @"添加菜单");
 }
 
+- (void)offerUndoForTrashedItem:(NSDictionary *)trashed {
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"已移入回收站"
+                                            message:[NSString stringWithFormat:@"「%@」已移入回收站", trashed[@"name"]]
+                                     preferredStyle:UIAlertControllerStyleAlert];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:@"撤销"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        [[VStore shared] restoreFromTrash:trashed];
+        [weakSelf.tableView reloadData];
+        [weakSelf refreshEmptyState];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"知道了" style:UIAlertActionStyleCancel handler:nil]];
+    PresentSafely(self, alert, @"回收站提示");
+}
+
 - (void)refreshEmptyState {
     BOOL hasFiles = [VStore shared].files.count > 0;
     self.emptyLabel.hidden = hasFiles;
@@ -780,13 +965,17 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive
                                                 title:@"删除"
                                               handler:^(UIContextualAction *action, UIView *sourceView, void (^completion)(BOOL)) {
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"删除文件"
-                                                                      message:file[@"name"]
-                                                               preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"删除" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
-            [[VStore shared] deleteFile:file];
+        UIAlertController *alert =
+            [UIAlertController alertControllerWithTitle:@"移入回收站？"
+                                                message:[NSString stringWithFormat:@"「%@」会移到回收站，之后还能恢复。", file[@"name"]]
+                                         preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"移入回收站" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
+            NSDictionary *trashed = [[VStore shared] deleteFile:file];
             [weakSelf.tableView reloadData];
             [weakSelf refreshEmptyState];
+            if (trashed) {
+                [weakSelf offerUndoForTrashedItem:trashed];
+            }
         }]];
         [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
         PresentSafely(weakSelf, alert, @"删除确认");
@@ -1002,7 +1191,7 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         return @"关闭网络后，页面里的在线脚本、图片、字体都不会被加载；本地文件不受影响。关闭 JavaScript 后需要重新打开页面生效。";
     }
     if (section == 2) {
-        return @"清空会删除 App 本地目录里的全部 HTML 文件和收藏记录，不可恢复。";
+        return @"清空会删除 App 本地目录里的全部 HTML 文件、收藏记录和回收站内容，不可恢复。";
     }
     return nil;
 }
@@ -2237,6 +2426,171 @@ static const NSInteger kUndoLimit = 30;
 
 @end
 
+#pragma mark - 回收站
+
+@interface TrashController : UIViewController <UITableViewDataSource, UITableViewDelegate>
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) UILabel *emptyLabel;
+@end
+
+@implementation TrashController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    self.title = @"回收站";
+
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
+    self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    self.tableView.rowHeight = 68;
+    [self.view addSubview:self.tableView];
+
+    UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
+    [NSLayoutConstraint activateConstraints:@[
+        [self.tableView.topAnchor constraintEqualToAnchor:safe.topAnchor],
+        [self.tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+    ]];
+
+    self.emptyLabel = [[UILabel alloc] init];
+    self.emptyLabel.numberOfLines = 0;
+    self.emptyLabel.textAlignment = NSTextAlignmentCenter;
+    self.emptyLabel.font = [UIFont systemFontOfSize:14];
+    self.emptyLabel.textColor = [UIColor secondaryLabelColor];
+    self.emptyLabel.text = @"回收站是空的\n删除的文件会先放到这里，随时可以恢复";
+    self.emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.emptyLabel];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.emptyLabel.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [self.emptyLabel.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor],
+        [self.emptyLabel.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:32],
+        [self.emptyLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-32],
+    ]];
+
+    self.navigationItem.rightBarButtonItem =
+        [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"trash.slash"]
+                                         style:UIBarButtonItemStylePlain
+                                        target:self
+                                        action:@selector(emptyTrashTapped)];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(filesChanged:)
+                                                 name:@"HTMLPadFilesChanged"
+                                               object:nil];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)filesChanged:(NSNotification *)notification {
+    [self refresh];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self refresh];
+}
+
+- (void)refresh {
+    [self.tableView reloadData];
+    BOOL empty = [[VStore shared] trashItems].count == 0;
+    self.emptyLabel.hidden = !empty;
+    self.tableView.hidden = empty;
+    self.navigationItem.rightBarButtonItem.enabled = !empty;
+}
+
+- (void)emptyTrashTapped {
+    NSUInteger count = [[VStore shared] trashCount];
+    if (count == 0) { return; }
+
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"清空回收站？"
+                                            message:[NSString stringWithFormat:@"回收站里的 %lu 个文件会被彻底删除，无法恢复。", (unsigned long)count]
+                                     preferredStyle:UIAlertControllerStyleAlert];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:@"全部彻底删除"
+                                              style:UIAlertActionStyleDestructive
+                                            handler:^(UIAlertAction *action) {
+        [[VStore shared] emptyTrash];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"HTMLPadFilesChanged" object:nil];
+        [weakSelf refresh];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    PresentSafely(self, alert, @"清空回收站");
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return [[VStore shared] trashItems].count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *identifier = @"trash";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle
+                                      reuseIdentifier:identifier];
+    }
+    NSDictionary *item = [[VStore shared] trashItems][indexPath.row];
+    cell.textLabel.text = item[@"name"];
+    cell.textLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
+    cell.textLabel.textColor = [UIColor secondaryLabelColor];
+
+    NSString *originalRel = item[@"originalRel"] ?: @"";
+    cell.detailTextLabel.text = [NSString stringWithFormat:@"原位置 %@ · 删除于 %@",
+                                 originalRel,
+                                 FormatDate(item[@"deletedAt"])];
+    cell.detailTextLabel.font = [UIFont systemFontOfSize:11];
+    cell.imageView.image = [UIImage systemImageNamed:@"trash"];
+    cell.imageView.tintColor = [UIColor systemGrayColor];
+    cell.accessoryType = UITableViewCellAccessoryNone;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView
+trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *item = [[VStore shared] trashItems][indexPath.row];
+    __weak typeof(self) weakSelf = self;
+
+    UIContextualAction *restoreAction =
+        [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
+                                                title:@"恢复"
+                                              handler:^(UIContextualAction *action, UIView *sourceView, void (^completion)(BOOL)) {
+        BOOL ok = [[VStore shared] restoreFromTrash:item];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"HTMLPadFilesChanged" object:nil];
+        [weakSelf refresh];
+        completion(ok);
+    }];
+    restoreAction.backgroundColor = [UIColor systemGreenColor];
+
+    UIContextualAction *destroyAction =
+        [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive
+                                                title:@"彻底删除"
+                                              handler:^(UIContextualAction *action, UIView *sourceView, void (^completion)(BOOL)) {
+        UIAlertController *alert =
+            [UIAlertController alertControllerWithTitle:@"彻底删除？"
+                                                message:[NSString stringWithFormat:@"「%@」将永久删除，无法恢复。", item[@"name"]]
+                                         preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"彻底删除"
+                                                  style:UIAlertActionStyleDestructive
+                                                handler:^(UIAlertAction *a) {
+            [[VStore shared] permanentlyDeleteTrashItem:item];
+            [weakSelf refresh];
+        }]];
+        [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+        PresentSafely(weakSelf, alert, @"彻底删除确认");
+        completion(YES);
+    }];
+
+    return [UISwipeActionsConfiguration configurationWithActions:@[destroyAction, restoreAction]];
+}
+
+@end
+
 #pragma mark - 根 TabBar
 
 
@@ -2257,13 +2611,19 @@ static const NSInteger kUndoLimit = 30;
                                                            image:[UIImage systemImageNamed:@"star"]
                                                              tag:1];
 
+    TrashController *trash = [[TrashController alloc] init];
+    UINavigationController *trashNav = [[UINavigationController alloc] initWithRootViewController:trash];
+    trashNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"回收站"
+                                                       image:[UIImage systemImageNamed:@"trash"]
+                                                         tag:2];
+
     SettingsController *settings = [[SettingsController alloc] initWithStyle:UITableViewStyleInsetGrouped];
     UINavigationController *settingsNav = [[UINavigationController alloc] initWithRootViewController:settings];
     settingsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"设置"
                                                           image:[UIImage systemImageNamed:@"gearshape"]
-                                                            tag:2];
+                                                            tag:3];
 
-    self.viewControllers = @[filesNav, favoritesNav, settingsNav];
+    self.viewControllers = @[filesNav, favoritesNav, trashNav, settingsNav];
     self.tabBar.tintColor = [UIColor systemBlueColor];
     [self setOverrideColorScheme];
 }
