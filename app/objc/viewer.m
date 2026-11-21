@@ -101,6 +101,15 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 
 #pragma mark - 数据层
 
+#pragma mark - 重命名结果
+
+typedef NS_ENUM(NSInteger, VStoreRenameResult) {
+    VStoreRenameOK = 0,
+    VStoreRenameUnchanged = 1,
+    VStoreRenameExists = 2,
+    VStoreRenameFailed = 3,
+};
+
 @interface VStore : NSObject
 @property (nonatomic, copy) NSString *rootPath;
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *files;
@@ -110,6 +119,10 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 - (BOOL)importFromURL:(NSURL *)url;
 - (BOOL)createFileNamed:(NSString *)name content:(NSString *)content;
 - (void)deleteFile:(NSDictionary *)file;
+- (VStoreRenameResult)renameFile:(NSDictionary *)file
+                       toRawName:(NSString *)rawName
+                         newFile:(NSDictionary **)outFile;
+- (NSDictionary *)fileInfoForPath:(NSString *)path;
 - (void)clearAll;
 - (BOOL)isFavorite:(NSDictionary *)file;
 - (void)toggleFavorite:(NSDictionary *)file;
@@ -271,6 +284,72 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
     [self reload];
 }
 
+- (NSDictionary *)fileInfoForPath:(NSString *)path {
+    if (path.length == 0) { return nil; }
+    for (NSDictionary *file in self.files) {
+        if ([file[@"path"] isEqual:path]) { return file; }
+    }
+    return nil;
+}
+
+/// 在同一目录内改名（保留原扩展名、同步收藏记录）
+- (VStoreRenameResult)renameFile:(NSDictionary *)file
+                       toRawName:(NSString *)rawName
+                         newFile:(NSDictionary **)outFile {
+    NSString *path = file[@"path"];
+    if (path.length == 0) { return VStoreRenameFailed; }
+
+    NSString *name = [rawName stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    name = [name stringByReplacingOccurrencesOfString:@"/" withString:@"-"];
+    name = [name stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    if (name.length == 0) { return VStoreRenameFailed; }
+
+    NSString *originalExtension = path.pathExtension;
+    if (name.pathExtension.length == 0 && originalExtension.length > 0) {
+        name = [name stringByAppendingPathExtension:originalExtension];
+    }
+
+    NSString *directory = path.stringByDeletingLastPathComponent;
+    NSString *target = [directory stringByAppendingPathComponent:name];
+
+    if ([target isEqualToString:path]) {
+        LogEvent(@"重命名：名字没变");
+        if (outFile) { *outFile = file; }
+        return VStoreRenameUnchanged;
+    }
+
+    NSFileManager *manager = [NSFileManager defaultManager];
+    if ([manager fileExistsAtPath:target]) {
+        LogEvent(@"重命名失败：已存在 %@", name);
+        return VStoreRenameExists;
+    }
+
+    NSError *error = nil;
+    if (![manager moveItemAtPath:path toPath:target error:&error]) {
+        LogEvent(@"重命名失败：%@", error.localizedDescription ?: @"未知");
+        return VStoreRenameFailed;
+    }
+
+    // 收藏是按相对路径存的，改名后要跟着换
+    NSString *oldRel = file[@"rel"];
+    NSString *rootPath = self.rootPath;
+    NSString *newRel = nil;
+    if ([target hasPrefix:rootPath]) {
+        newRel = [target substringFromIndex:rootPath.length];
+        if ([newRel hasPrefix:@"/"]) { newRel = [newRel substringFromIndex:1]; }
+    }
+    if (oldRel && newRel && [self.favorites containsObject:oldRel]) {
+        [self.favorites removeObject:oldRel];
+        [self.favorites addObject:newRel];
+        [UD() setObject:self.favorites forKey:@"html.favorites.v1"];
+    }
+
+    [self reload];
+    LogEvent(@"重命名成功：%@ → %@", file[@"name"], name);
+    if (outFile) { *outFile = [self fileInfoForPath:target]; }
+    return VStoreRenameOK;
+}
+
 - (BOOL)isFavorite:(NSDictionary *)file {
     NSString *rel = file[@"rel"];
     return rel ? [self.favorites containsObject:rel] : NO;
@@ -313,6 +392,61 @@ static void PresentSafely(UIViewController *presenter, UIViewController *target,
 }
 
 @end
+
+#pragma mark - 重命名对话框
+
+/// 弹一个输入框让用户改名；成功后会发 HTMLPadFilesChanged 通知
+static void PresentRenameDialog(UIViewController *presenter,
+                                NSDictionary *file,
+                                void (^onRenamed)(NSDictionary *newFile)) {
+    if (!presenter || !file) { return; }
+
+    NSString *currentName = file[@"name"] ?: @"";
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"重命名"
+                                            message:@"输入新的文件名（扩展名可省略，会自动补上）"
+                                     preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.text = currentName;
+        field.autocapitalizationType = UITextAutocapitalizationTypeNone;
+        field.autocorrectionType = UITextAutocorrectionTypeNo;
+        field.clearButtonMode = UITextFieldViewModeWhileEditing;
+        field.returnKeyType = UIReturnKeyDone;
+    }];
+
+    __weak UIViewController *weakPresenter = presenter;
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确定"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        NSString *newName = alert.textFields.firstObject.text ?: @"";
+        NSDictionary *renamed = nil;
+        VStoreRenameResult result = [[VStore shared] renameFile:file
+                                                      toRawName:newName
+                                                        newFile:&renamed];
+
+        if (result == VStoreRenameOK) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"HTMLPadFilesChanged" object:nil];
+            if (onRenamed) { onRenamed(renamed); }
+            return;
+        }
+        if (result == VStoreRenameUnchanged) {
+            return;
+        }
+
+        NSString *message = (result == VStoreRenameExists)
+            ? @"这个目录里已经有同名文件了，换个名字试试。"
+            : @"改名失败，可能是文件被占用或权限受限。";
+        UIAlertController *failure =
+            [UIAlertController alertControllerWithTitle:@"重命名失败"
+                                                message:message
+                                         preferredStyle:UIAlertControllerStyleAlert];
+        [failure addAction:[UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault handler:nil]];
+        PresentSafely(weakPresenter, failure, @"重命名失败提示");
+    }]];
+
+    PresentSafely(presenter, alert, @"重命名");
+}
 
 #pragma mark - 前置声明（实现放在后面）
 
@@ -670,7 +804,16 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     }];
     favAction.backgroundColor = [UIColor systemOrangeColor];
 
-    return [UISwipeActionsConfiguration configurationWithActions:@[deleteAction, favAction]];
+    UIContextualAction *renameAction =
+        [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
+                                                title:@"重命名"
+                                              handler:^(UIContextualAction *action, UIView *sourceView, void (^completion)(BOOL)) {
+        PresentRenameDialog(weakSelf, file, nil);
+        completion(YES);
+    }];
+    renameAction.backgroundColor = [UIColor systemGrayColor];
+
+    return [UISwipeActionsConfiguration configurationWithActions:@[deleteAction, renameAction, favAction]];
 }
 
 #pragma mark 打开 / 导入
@@ -742,6 +885,23 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         [self.emptyLabel.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:32],
         [self.emptyLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-32],
     ]];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(filesChanged:)
+                                                 name:@"HTMLPadFilesChanged"
+                                               object:nil];
+}
+
+- (void)filesChanged:(NSNotification *)notification {
+    [[VStore shared] reload];
+    [self.tableView reloadData];
+    BOOL empty = [VStore shared].favoriteFiles.count == 0;
+    self.emptyLabel.hidden = !empty;
+    self.tableView.hidden = empty;
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -799,7 +959,17 @@ trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
         done(YES);
     }];
     action.backgroundColor = [UIColor systemOrangeColor];
-    return [UISwipeActionsConfiguration configurationWithActions:@[action]];
+
+    UIContextualAction *renameAction =
+        [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
+                                                title:@"重命名"
+                                              handler:^(UIContextualAction *renameActionRef, UIView *v, void (^done)(BOOL)) {
+        PresentRenameDialog(weakSelf, file, nil);
+        done(YES);
+    }];
+    renameAction.backgroundColor = [UIColor systemGrayColor];
+
+    return [UISwipeActionsConfiguration configurationWithActions:@[renameAction, action]];
 }
 
 @end
@@ -1091,6 +1261,24 @@ static NSString *const kViewportJS =
     self.navigationItem.rightBarButtonItems = @[more, search];
 }
 
+/// 改名后同步标题、文件对象，并重新加载页面
+- (void)applyRenamedFile:(NSDictionary *)newFile {
+    if (!newFile) { return; }
+
+    self.file = newFile;
+
+    if ([self.navigationItem.titleView isKindOfClass:[UILabel class]]) {
+        ((UILabel *)self.navigationItem.titleView).text = newFile[@"name"];
+    }
+
+    NSDictionary *attributes = [[NSFileManager defaultManager]
+        attributesOfItemAtPath:newFile[@"path"] error:NULL];
+    self.loadedModified = attributes[NSFileModificationDate];
+
+    [self loadPage];
+    LogEvent(@"预览页已切换到新文件名：%@", newFile[@"name"]);
+}
+
 /// 直接进入源码编辑器（工具栏快捷入口）
 - (void)openSourceEditor {
     LogEvent(@"点击编辑按钮");
@@ -1116,6 +1304,13 @@ static NSString *const kViewportJS =
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *action) {
         [weakSelf openSourceEditor];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"重命名…"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *action) {
+        PresentRenameDialog(weakSelf, weakSelf.file, ^(NSDictionary *newFile) {
+            [weakSelf applyRenamedFile:newFile];
+        });
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"重新加载"
                                               style:UIAlertActionStyleDefault
